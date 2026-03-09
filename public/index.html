@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Vulnerability Scanner</title>
+</head>
+
+<body>
+
+<h2>Website Vulnerability Scanner</h2>
+
+<input id="url" placeholder="Enter website URL">
+<button onclick="scan()">Scan</button>
+
+<script>
+
+async function scan(){
+
+const url = document.getElementById("url").value
+
+const res = await fetch("http://localhost:3000/scan",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({url})
+})
+
+const data = await res.json()
+
+console.log(data)
+
+}
+
+</script>
+
+</body>
+</html>
