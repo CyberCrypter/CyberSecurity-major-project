@@ -10,15 +10,21 @@ function analyze(results) {
     }
 
     // XSS Detection
-    const xss = results.xss || "";
-    if (/possible|vulnerable|found/i.test(String(xss))) {
-        report.push("CRITICAL: Cross-Site Scripting (XSS) vulnerability detected — attacker can inject malicious scripts.");
+    const xss = results.xss;
+    const hasXSS = (xss && typeof xss === 'object' && Array.isArray(xss.results))
+        ? xss.results.some(r => r.type !== 'waf_detected')
+        : /possible|vulnerable|found/i.test(String(xss || ""));
+    if (hasXSS) {
+        report.push("CRITICAL: Cross-Site Scripting (XSS) vulnerability detected \u2014 attacker can inject malicious scripts.");
         riskScore += 25;
     }
 
     // SQL Injection
-    const sql = results.sql || "";
-    if (/possible|vulnerable|found/i.test(String(sql))) {
+    const sql = results.sql;
+    const hasSQL = (sql && typeof sql === 'object' && Array.isArray(sql.results))
+        ? sql.results.some(r => r.type !== 'waf_detected')
+        : /possible|vulnerable|found/i.test(String(sql || ""));
+    if (hasSQL) {
         report.push("CRITICAL: SQL Injection vulnerability detected — database data may be compromised.");
         riskScore += 25;
     }
@@ -69,7 +75,9 @@ function analyze(results) {
     }
 
     // Technologies
-    const techs = results.technologies || [];
+    const techs = Array.isArray(results.technologies) ? results.technologies
+        : (results.technologies && Array.isArray(results.technologies.technologies)) ? results.technologies.technologies
+        : [];
     if (techs.length > 0) {
         const outdatedPatterns = /wordpress|jquery\s*1\.|php\/5|apache\/2\.2|nginx\/1\.1[0-8]/i;
         const outdated = techs.filter(t => outdatedPatterns.test(t));

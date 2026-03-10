@@ -485,10 +485,10 @@ body{
         <textarea class="scan-textarea" id="targets" placeholder="https://example.com&#10;https://another-target.com" spellcheck="false"></textarea>
       </div>
       <div class="scan-actions">
-        <button class="btn btn-primary" id="scanBtn" onclick="startScan()">
+        <button type="button" class="btn btn-primary" id="scanBtn" onclick="startScan(event)">
           <span class="icon-scan"></span> Initialize Scan
         </button>
-        <button class="btn btn-report" id="reportBtn" onclick="downloadReport()" style="display:none">
+        <button type="button" class="btn btn-report" id="reportBtn" onclick="downloadReport()" style="display:none">
           ⬇ Download PDF Report
         </button>
         <span class="scan-hint">Supports multiple targets simultaneously</span>
@@ -537,8 +537,18 @@ const API_BASE_URL = 'https://cybersecurity-major-project.onrender.com'; // Afte
 let scanResults = null;
 let activeTarget = 0;
 
+// Global error handler – prevents silent crashes
+window.onerror = function(msg, src, line, col, err) {
+  console.error('GLOBAL ERROR:', msg, 'at', src, line, col, err);
+  showToast('JS Error: ' + msg);
+  return true;
+};
+
 /* ===== SCAN ===== */
-async function startScan() {
+async function startScan(e) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
   const text = document.getElementById('targets').value.trim();
   if (!text) { showToast('Enter at least one target URL'); return; }
 
@@ -569,10 +579,21 @@ async function startScan() {
     }
 
     scanResults = await res.json();
+    console.log('Scan results received:', scanResults);
     hideOverlay();
-    renderDashboard(scanResults);
-    document.getElementById('reportBtn').style.display = 'inline-flex';
+
+    // Make dashboard visible BEFORE rendering so partial results show on error
     document.getElementById('dashboard').classList.add('active');
+    document.getElementById('reportBtn').style.display = 'inline-flex';
+
+    try {
+      renderDashboard(scanResults);
+    } catch (renderErr) {
+      console.error('RENDER ERROR:', renderErr);
+      document.getElementById('dashboardContent').innerHTML =
+        '<p style="color:var(--red);padding:20px;">Error rendering results. Check browser console (F12) for details. Raw data received successfully.</p>';
+    }
+
     document.getElementById('dashboard').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
     clearTimeout(fetchTimeout);
@@ -677,9 +698,14 @@ function renderDashboard(data) {
     </div>
   </div>`;
 
-  // Risk Meter
-  const riskScore = Math.min(100, summary.critical * 25 + summary.high * 10 + summary.medium * 5);
-  const riskColor = riskScore > 70 ? 'var(--red)' : riskScore > 40 ? 'var(--orange)' : riskScore > 15 ? 'var(--yellow)' : 'var(--green)';
+  // Risk Meter (aligned with AI "Overall Risk Level" output)
+  const aiRisk = extractOverallRisk(data);
+  const riskScore = aiRisk.score;
+  const riskLevel = aiRisk.level;
+  const riskColor = riskLevel === 'CRITICAL' ? 'var(--red)'
+    : riskLevel === 'HIGH' ? 'var(--orange)'
+    : riskLevel === 'MEDIUM' ? 'var(--yellow)'
+    : 'var(--green)';
   const circumference = 2 * Math.PI * 42;
   const offset = circumference - (riskScore / 100) * circumference;
 
@@ -696,6 +722,7 @@ function renderDashboard(data) {
         <div class="score-text" style="color:${riskColor}">${riskScore}</div>
       </div>
       <div style="font-size:12px;color:var(--text-dim)">RISK SCORE</div>
+      <div style="font-size:11px;color:${riskColor};font-weight:700;letter-spacing:0.7px">${riskLevel}</div>
     </div>
     <div class="risk-meter-details">
       <div class="risk-meter-title">Vulnerability Distribution</div>
@@ -745,8 +772,8 @@ function renderDashboard(data) {
         <div class="ai-card-title"><span class="icon-ai"></span> <span>AI Threat Assessment</span></div>
         <div class="ai-insights">`;
       ai.forEach(item => {
-        const cls = item.toLowerCase().includes('ssh') || item.toLowerCase().includes('brute') ? 'critical'
-          : item.toLowerCase().includes('missing') || item.toLowerCase().includes('exposed') ? 'warning' : 'info';
+        const cls = item.startsWith('CRITICAL:') || item.toLowerCase().includes('critical') || item.toLowerCase().includes('ssh') || item.toLowerCase().includes('brute') ? 'critical'
+          : item.toLowerCase().includes('missing') || item.toLowerCase().includes('exposed') || item.toLowerCase().includes('admin') ? 'warning' : 'info';
         const icon = cls === 'critical' ? '⚠' : cls === 'warning' ? '⚡' : 'ℹ';
         html += `<div class="ai-insight ${cls}">
           <span class="ai-insight-icon">${icon}</span>
@@ -766,10 +793,19 @@ function renderDashboard(data) {
     );
 
     // XSS
-    html += buildSimpleCard('icon-xss', 'XSS Detection', site.xss, isVuln(site.xss) ? 'critical' : 'safe');
+    const xssResults = (site.xss && site.xss.results) ? site.xss.results : (typeof site.xss === 'string' && site.xss ? [site.xss] : []);
+    html += buildCard('icon-xss', 'XSS Detection', xssResults, isVuln(site.xss) ? 'warn' : 'safe', v => {
+      if (v.type === 'waf_detected') return `<div class="result-item info">🛡️ WAF Detected: ${escHtml(v.server || 'Unknown')}</div>`;
+      return `<div class="result-item vuln">Param: <strong>${escHtml(v.parameter || '?')}</strong> | Payload: ${escHtml(v.payload || '')} | Type: ${escHtml(v.type || '')}</div>`;
+    });
 
     // SQL Injection
-    html += buildSimpleCard('icon-sql', 'SQL Injection', site.sql, isVuln(site.sql) ? 'critical' : 'safe');
+    const sqlResults = (site.sql && site.sql.results) ? site.sql.results : (typeof site.sql === 'string' && site.sql ? [site.sql] : []);
+    html += buildCard('icon-sql', 'SQL Injection', sqlResults, isVuln(site.sql) ? 'warn' : 'safe', v => {
+      if (v.type === 'waf_detected') return `<div class="result-item info">🛡️ WAF Detected: ${escHtml(v.server || 'Unknown')}</div>`;
+      if (typeof v === 'string') return `<div class="result-item vuln">${escHtml(v)}</div>`;
+      return `<div class="result-item vuln">Param: <strong>${escHtml(v.parameter || '?')}</strong> | Payload: ${escHtml(v.payload || '')} | Type: ${escHtml(v.type || '')}</div>`;
+    });
 
     // Open Ports
     html += buildCard('icon-port', 'Open Ports', site.ports || site.openPorts, 'info', v =>
@@ -782,18 +818,29 @@ function renderDashboard(data) {
     );
 
     // Directories
-    html += buildCard('icon-dir', 'Exposed Directories', site.directories, 'warn', v =>
-      `<div class="result-item warn">${escHtml(v)}</div>`
-    );
+    html += buildCard('icon-dir', 'Exposed Directories', site.directories, 'warn', v => {
+      if (typeof v === 'object' && v.url) return `<div class="result-item warn">${escHtml(v.url)} <span style="color:var(--text-dim)">(${v.status} - ${escHtml(v.type || '')})</span></div>`;
+      return `<div class="result-item warn">${escHtml(String(v))}</div>`;
+    });
 
     // Subdomains
-    html += buildCard('icon-sub', 'Subdomains', site.subdomains, 'info', v =>
-      `<div class="result-item info">${escHtml(v)}</div>`
-    );
+    html += buildCard('icon-sub', 'Subdomains', site.subdomains, 'info', v => {
+      if (typeof v === 'object' && v.url) {
+        let text = v.url;
+        if (v.title) text += ` — ${v.title}`;
+        if (v.server) text += ` [${v.server}]`;
+        if (v.waf) text += ` (WAF: ${v.waf})`;
+        return `<div class="result-item info">${escHtml(text)}</div>`;
+      }
+      return `<div class="result-item info">${escHtml(String(v))}</div>`;
+    });
 
     // Technologies
-    html += buildCard('icon-tech', 'Technologies', site.technologies, 'info', v =>
-      `<div class="result-item info">${escHtml(v)}</div>`
+    const techList = Array.isArray(site.technologies) ? site.technologies
+      : (site.technologies && Array.isArray(site.technologies.technologies)) ? site.technologies.technologies
+      : [];
+    html += buildCard('icon-tech', 'Technologies', techList, 'info', v =>
+      `<div class="result-item info">${escHtml(typeof v === 'object' ? (v.name || JSON.stringify(v)) : String(v))}</div>`
     );
 
     // API Endpoints
@@ -802,9 +849,10 @@ function renderDashboard(data) {
     );
 
     // Parameters
-    html += buildCard('icon-param', 'Discovered Parameters', site.parameters, 'info', v =>
-      `<div class="result-item info">${escHtml(v)}</div>`
-    );
+    html += buildCard('icon-param', 'Discovered Parameters', site.parameters, 'info', v => {
+      if (typeof v === 'object' && v.param) return `<div class="result-item info"><strong>${escHtml(v.param)}</strong>: ${escHtml(v.payload || '')} <span style="color:var(--text-dim)">(${escHtml(v.type || '')})</span></div>`;
+      return `<div class="result-item info">${escHtml(String(v))}</div>`;
+    });
 
     // JS Endpoints
     html += buildCard('icon-js', 'JS Endpoints', site.jsEndpoints, 'info', v =>
@@ -881,6 +929,10 @@ function pct(val, total) {
 
 function isVuln(val) {
   if (!val) return false;
+  // Handle object format from scanners (e.g. { target, results: [...] })
+  if (typeof val === 'object' && val.results && Array.isArray(val.results)) {
+    return val.results.some(r => r.type !== 'waf_detected');
+  }
   const s = String(val).toLowerCase();
   return s.includes('possible') || s.includes('vulnerable') || s.includes('found');
 }
@@ -979,12 +1031,40 @@ function computeSummary(data) {
     // Info: Pages, endpoints, tech, subdomains, APIs
     info += (site.pages || []).length;
     info += (site.jsEndpoints || []).length;
-    info += (site.technologies || []).length;
+    const techs = Array.isArray(site.technologies) ? site.technologies
+      : (site.technologies && Array.isArray(site.technologies.technologies)) ? site.technologies.technologies
+      : [];
+    info += techs.length;
     info += (site.subdomains || []).length;
     info += (site.apis || []).length;
   });
 
   return { critical, high, medium, info, total: critical + high + medium + info };
+}
+
+function extractOverallRisk(data) {
+  const entries = Array.isArray(data) ? data : [];
+  if (entries.length === 0) return { score: 0, level: 'LOW' };
+
+  // If multiple targets are scanned, use the highest AI risk score.
+  let maxScore = 0;
+
+  for (const site of entries) {
+    const ai = Array.isArray(site.aiAnalysis) ? site.aiAnalysis : [];
+    const overall = ai.find(line => typeof line === 'string' && line.startsWith('Overall Risk Level:')) || '';
+    const m = overall.match(/Overall Risk Level:\s*(LOW|MEDIUM|HIGH|CRITICAL)\s*\(Score:\s*(\d+)\/100\)/i);
+    if (m) {
+      const score = Math.max(0, Math.min(100, Number(m[2]) || 0));
+      if (score > maxScore) maxScore = score;
+    }
+  }
+
+  let level = 'LOW';
+  if (maxScore > 70) level = 'CRITICAL';
+  else if (maxScore > 40) level = 'HIGH';
+  else if (maxScore > 15) level = 'MEDIUM';
+
+  return { score: maxScore, level };
 }
 
 function downloadReport() {

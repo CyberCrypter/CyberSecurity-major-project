@@ -65,18 +65,70 @@ function generateReport(data, fileName = "scan-report.pdf") {
 					? site.headers.vulnerabilities
 					: [];
 
-			writeSection(doc, "XSS Result", site.xss || "N/A");
-			writeSection(doc, "SQL Result", site.sql || "N/A");
+			// XSS Results
+			const xssData = site.xss;
+			if (xssData && typeof xssData === "object" && Array.isArray(xssData.results)) {
+				const xssItems = xssData.results.map((r) => {
+					if (r.type === "waf_detected") return `WAF Detected: ${r.server || "Unknown"}`;
+					return `${r.parameter || "?"}: ${r.payload || ""} (${r.type || ""})`;
+				});
+				writeListSection(doc, "XSS Results", xssItems);
+			} else {
+				writeSection(doc, "XSS Result", String(xssData || "N/A"));
+			}
+
+			// SQL Results
+			const sqlData = site.sql;
+			if (sqlData && typeof sqlData === "object" && Array.isArray(sqlData.results)) {
+				const sqlItems = sqlData.results.map((r) => {
+					if (r.type === "waf_detected") return `WAF Detected: ${r.server || "Unknown"}`;
+					return `${r.parameter || "?"}: ${r.payload || ""} (${r.type || ""})`;
+				});
+				writeListSection(doc, "SQL Injection Results", sqlItems);
+			} else {
+				writeSection(doc, "SQL Result", String(sqlData || "N/A"));
+			}
+
 			writeListSection(doc, "Missing Security Headers", headerFindings);
 			writeListSection(doc, "Open Ports", site.ports || site.openPorts);
 			writeListSection(doc, "Admin Panels", site.adminPanels);
-			writeListSection(doc, "Directories", site.directories);
-			writeListSection(doc, "Discovered Parameters", site.parameters);
+
+			// Directories (may be objects)
+			const dirItems = (site.directories || []).map((d) =>
+				typeof d === "object" && d.url ? `${d.url} (${d.status} - ${d.type || ""})` : String(d)
+			);
+			writeListSection(doc, "Directories", dirItems);
+
+			// Parameters (may be objects)
+			const paramItems = (site.parameters || []).map((p) =>
+				typeof p === "object" && p.param ? `${p.param}: ${p.payload || ""} (${p.type || ""})` : String(p)
+			);
+			writeListSection(doc, "Discovered Parameters", paramItems);
+
 			writeListSection(doc, "Crawled Pages", site.pages);
 			writeListSection(doc, "JS Endpoints", site.jsEndpoints);
 			writeListSection(doc, "API Endpoints", site.apis);
-			writeListSection(doc, "Technologies", site.technologies);
-			writeListSection(doc, "Subdomains", site.subdomains);
+
+			// Technologies (may be object with .technologies array)
+			const techItems = Array.isArray(site.technologies) ? site.technologies
+				: (site.technologies && Array.isArray(site.technologies.technologies)) ? site.technologies.technologies
+				: [];
+			writeListSection(doc, "Technologies", techItems.map((t) =>
+				typeof t === "object" ? (t.name || JSON.stringify(t)) : String(t)
+			));
+
+			// Subdomains (may be objects)
+			const subItems = (site.subdomains || []).map((s) => {
+				if (typeof s === "object" && s.url) {
+					let text = s.url;
+					if (s.title) text += ` - ${s.title}`;
+					if (s.server) text += ` [${s.server}]`;
+					return text;
+				}
+				return String(s);
+			});
+			writeListSection(doc, "Subdomains", subItems);
+
 			writeListSection(doc, "Secrets Found", site.jsSecrets);
 
 			// JWT Analysis
