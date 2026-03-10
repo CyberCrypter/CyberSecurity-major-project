@@ -1,24 +1,20 @@
 const axios = require("axios");
 
-const directories = [
-    "/admin",
-    "/backup",
-    "/uploads",
-    "/.git",
-    "/config",
-    "/dashboard",
-    "/.env",
-    "/.htaccess",
-    "/wp-content",
-    "/includes",
-    "/assets",
-    "/static",
-    "/tmp",
-    "/logs",
-    "/db",
-    "/database",
-    "/private",
-    "/secret",
+const apiPaths = [
+    "/api",
+    "/api/v1",
+    "/api/v2",
+    "/api/login",
+    "/api/users",
+    "/api/health",
+    "/api/status",
+    "/graphql",
+    "/rest",
+    "/v1",
+    "/v2",
+    "/swagger",
+    "/api-docs",
+    "/openapi.json",
 ];
 
 function getWords(html) {
@@ -67,14 +63,14 @@ async function getBaselineBody(url) {
     }
 }
 
-async function scanDirectories(url) {
+async function findAPIs(url) {
     const found = [];
     const baseline = await getBaselineBody(url);
     const notFoundBaseline = await getBaselineBody(url + "/thispagedoesnotexist_" + Date.now());
 
-    for (const dir of directories) {
+    for (const p of apiPaths) {
         try {
-            const target = url.replace(/\/+$/, "") + dir;
+            const target = url.replace(/\/+$/, "") + p;
             const res = await axios.get(target, {
                 timeout: 8000,
                 validateStatus: () => true,
@@ -83,7 +79,7 @@ async function scanDirectories(url) {
 
             if (res.status >= 300 && res.status < 400) continue;
 
-            // 403 = Forbidden but directory exists
+            // 403 = API endpoint exists but is protected
             if (res.status === 403) {
                 found.push(target + " (403 Forbidden)");
                 continue;
@@ -92,6 +88,15 @@ async function scanDirectories(url) {
             if (res.status !== 200) continue;
 
             const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
+            if (body.length < 2) continue;
+
+            // JSON/API responses are inherently different from HTML pages — trust them
+            const contentType = (res.headers["content-type"] || "").toLowerCase();
+            if (contentType.includes("json") || contentType.includes("xml")) {
+                found.push(target);
+                continue;
+            }
+
             if (body.length < 50) continue;
             if (looksLikeErrorPage(body)) continue;
             if (isSimilar(body, notFoundBaseline)) continue;
@@ -104,4 +109,4 @@ async function scanDirectories(url) {
     return found;
 }
 
-module.exports = scanDirectories;
+module.exports = findAPIs;

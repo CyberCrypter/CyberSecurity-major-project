@@ -1,19 +1,16 @@
 const axios = require("axios");
 const dns = require("dns").promises;
 
-const subdomains = [
-"api",
-"dev",
-"test",
-"admin",
-"mail",
-"staging"
+const wordlist = [
+"api","dev","test","stage","staging",
+"admin","mail","cdn","beta","app",
+"portal","dashboard","secure"
 ];
 
-async function scanSubdomains(domain) {
+async function reconSubdomains(domain) {
     const found = [];
 
-    for (const sub of subdomains) {
+    for (const sub of wordlist) {
         const hostname = sub + "." + domain;
 
         try {
@@ -50,4 +47,4 @@ async function scanSubdomains(domain) {
     return found;
 }
 
-module.exports = scanSubdomains;
+module.exports = reconSubdomains;

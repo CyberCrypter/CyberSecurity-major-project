@@ -4,7 +4,18 @@ async function scanHeaders(url){
 
     try{
 
-        const response = await axios.get(url);
+        const response = await axios.get(url, {
+            timeout: 8000,
+            validateStatus: () => true,
+        });
+
+        if (response.status >= 400) {
+            return {
+                target: url,
+                vulnerabilities: [],
+                error: `Target returned status ${response.status}`,
+            };
+        }
 
         const headers = response.headers;
 

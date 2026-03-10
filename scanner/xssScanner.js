@@ -1,24 +1,43 @@
 const axios = require("axios");
 
 async function scanXSS(url){
+	const payload = "<script>alert(1)</script>";
 
-const payload = "<script>alert(1)</script>";
+	try{
+		const target = new URL(url);
+		target.searchParams.set("q", payload);
 
-try{
+		const res = await axios.get(target.toString(), {
+			timeout: 8000,
+			validateStatus: () => true,
+			headers: { "User-Agent": "WebVulnScanner/1.0" },
+		});
 
-let res = await axios.get(url + "?q=" + payload);
+		if (res.status >= 500) {
+			return `Scan inconclusive (server error ${res.status})`;
+		}
 
-if(res.data.includes(payload))
-return "Possible XSS";
+		if (res.status === 403 || res.status === 406 || res.status === 429) {
+			return `Scan blocked by target/WAF (${res.status})`;
+		}
 
-else
-return "No XSS detected";
+		const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
+		if (body.includes(payload)) {
+			return "Possible XSS";
+		}
 
-}catch(err){
+		return "No XSS detected";
+	}catch(err){
+		if (err.code === "ECONNABORTED") {
+			return "Scan timeout";
+		}
 
-return "Error scanning";
+		if (err.code === "ENOTFOUND") {
+			return "Host not found";
+		}
 
-}
+		return `Scan failed: ${err.message}`;
+	}
 
 }
 
