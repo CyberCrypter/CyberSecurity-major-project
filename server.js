@@ -77,10 +77,25 @@ app.post("/scan", async (req,res)=>{
                 safeRun(() => crawl(url), [], 20000),
             ]);
 
-            // Secret finding depends on jsEndpoints, run after
+            // Normalize JS endpoint scanner output for compatibility.
+            let jsEndpointsArray = [];
+            let jsUrls = [];
+
+            if (Array.isArray(jsEndpoints)) {
+                jsEndpointsArray = jsEndpoints;
+            } else if (jsEndpoints && typeof jsEndpoints === "object") {
+                jsEndpointsArray = Array.isArray(jsEndpoints.endpoints) ? jsEndpoints.endpoints : [];
+                jsUrls = Array.isArray(jsEndpoints.urls) ? jsEndpoints.urls : [];
+            }
+
+            // Secret finding depends on JS assets, run after endpoint scan.
+            const secretTargets = jsUrls.length > 0
+                ? jsUrls.filter((u) => /\.js(\?|$)/i.test(String(u)))
+                : jsEndpointsArray;
+
             const secrets = [];
-            const secretJobs = (jsEndpoints || []).map(js =>
-                safeRun(() => findSecrets(js), [], 8000)
+            const secretJobs = secretTargets.map((target) =>
+                safeRun(() => findSecrets(target), [], 8000)
             );
             const secretResults = await Promise.all(secretJobs);
             for (const found of secretResults) secrets.push(...found);
@@ -103,7 +118,7 @@ app.post("/scan", async (req,res)=>{
                 openPorts: ports,
                 parameters: params,
                 pages,
-                jsEndpoints,
+                jsEndpoints: jsEndpointsArray,
                 apis,
                 technologies,
                 subdomains: recon,
