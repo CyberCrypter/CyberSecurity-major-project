@@ -78,6 +78,53 @@ function generateReport(data, fileName = "scan-report.pdf") {
 			writeListSection(doc, "Technologies", site.technologies);
 			writeListSection(doc, "Subdomains", site.subdomains);
 			writeListSection(doc, "Secrets Found", site.jsSecrets);
+
+			// JWT Analysis
+			const jwt = site.jwtAnalysis;
+			if (jwt) {
+				doc.font("Helvetica-Bold").text("JWT Analysis:");
+				if (jwt.valid) {
+					doc.font("Helvetica").text(`  Algorithm: ${jwt.algorithm || "N/A"}`, { indent: 12 });
+					doc.font("Helvetica").text(`  Tokens Found: ${jwt.tokensFound || 0}`, { indent: 12 });
+					if (jwt.vulnerabilities && jwt.vulnerabilities.length > 0) {
+						doc.font("Helvetica").text("  Vulnerabilities:", { indent: 12 });
+						jwt.vulnerabilities.forEach((v) => {
+							doc.font("Helvetica").text(`    - ${v}`, { indent: 20 });
+						});
+					}
+					if (jwt.warnings && jwt.warnings.length > 0) {
+						doc.font("Helvetica").text("  Warnings:", { indent: 12 });
+						jwt.warnings.forEach((w) => {
+							doc.font("Helvetica").text(`    - ${w}`, { indent: 20 });
+						});
+					}
+					if (jwt.attackSimulation && jwt.attackSimulation.type) {
+						doc.font("Helvetica").text(`  Attack Simulation: ${jwt.attackSimulation.type}`, { indent: 12 });
+						doc.font("Helvetica").text(`    ${jwt.attackSimulation.description || ""}`, { indent: 20 });
+					}
+				} else {
+					doc.font("Helvetica").text(`  ${jwt.message || jwt.error || "No JWT tokens detected"}`, { indent: 12 });
+				}
+				doc.moveDown(0.5);
+			}
+
+			// Bruteforce Results
+			const brute = site.bruteforce;
+			if (brute) {
+				doc.font("Helvetica-Bold").text("Brute Force Analysis:");
+				doc.font("Helvetica").text(`  Summary: ${brute.summary || "N/A"}`, { indent: 12 });
+				doc.font("Helvetica").text(`  Login Forms Found: ${(brute.loginFormsFound || []).length}`, { indent: 12 });
+				doc.font("Helvetica").text(`  Endpoints Tested: ${(brute.testedEndpoints || []).length}`, { indent: 12 });
+				doc.font("Helvetica").text(`  Total Attempts: ${brute.attempts || 0}`, { indent: 12 });
+				if (brute.weakCredentials && brute.weakCredentials.length > 0) {
+					doc.font("Helvetica").text("  Weak Credentials Found:", { indent: 12 });
+					brute.weakCredentials.forEach((cred) => {
+						doc.font("Helvetica").text(`    - ${cred.username}:${cred.password} at ${cred.endpoint}`, { indent: 20 });
+					});
+				}
+				doc.moveDown(0.5);
+			}
+
 			writeListSection(doc, "AI Analysis", site.aiAnalysis);
 
 			if (index < entries.length - 1) {

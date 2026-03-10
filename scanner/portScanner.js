@@ -1,39 +1,128 @@
 const net = require("net");
+const fs = require("fs");
+const path = require("path");
 
-const ports = [21,22,25,53,80,110,143,443,3306,8080];
+// load ports from wordlist
+const ports = fs
+    .readFileSync(path.join(__dirname, "./wordlists/ports.txt"), "utf8")
 
-async function scanPorts(host){
+    .split("\n")
+    .map(p => parseInt(p.trim()))
+    .filter(Boolean);
 
-let openPorts = [];
+// common service mapping
+const services = {
+    21: "FTP",
+    22: "SSH",
+    23: "Telnet",
+    25: "SMTP",
+    53: "DNS",
+    80: "HTTP",
+    110: "POP3",
+    143: "IMAP",
+    443: "HTTPS",
+    445: "SMB",
+    3306: "MySQL",
+    3389: "RDP",
+    5432: "PostgreSQL",
+    6379: "Redis",
+    8080: "HTTP-Alt",
+    27017: "MongoDB"
+};
 
-for(let port of ports){
+async function scanPorts(host, timeout = 1000, concurrency = 50) {
 
-await new Promise((resolve)=>{
+    if (!host) {
+        throw new Error("Host required");
+    }
 
-const socket = new net.Socket();
+    let results = [];
+    let queue = [...ports];
 
-socket.setTimeout(1000);
+    async function scanSinglePort(port) {
 
-socket.connect(port,host,()=>{
-openPorts.push(port);
-socket.destroy();
-resolve();
-});
+        return new Promise((resolve) => {
 
-socket.on("error",()=>{
-resolve();
-});
+            let banner = "";
+            let status = "closed";
 
-socket.on("timeout",()=>{
-socket.destroy();
-resolve();
-});
+            const socket = new net.Socket();
 
-});
+            socket.setTimeout(timeout);
 
-}
+            socket.connect(port, host, () => {
 
-return openPorts;
+                status = "open";
+
+                socket.write("HEAD / HTTP/1.0\r\n\r\n");
+
+            });
+
+            socket.on("data", (data) => {
+
+                banner = data.toString().slice(0, 100);
+
+            });
+
+            socket.on("timeout", () => {
+
+                if (status !== "open") {
+                    status = "filtered";
+                }
+
+                socket.destroy();
+                resolve();
+
+            });
+
+            socket.on("error", () => {
+
+                status = "closed";
+                resolve();
+
+            });
+
+            socket.on("close", () => {
+
+                if (status === "open") {
+
+                    results.push({
+                        port,
+                        status,
+                        service: services[port] || "unknown",
+                        banner
+                    });
+
+                }
+
+            });
+
+        });
+
+    }
+
+    // worker system for concurrency
+    let workers = [];
+
+    for (let i = 0; i < concurrency; i++) {
+
+        workers.push((async () => {
+
+            while (queue.length) {
+
+                const port = queue.shift();
+
+                await scanSinglePort(port);
+
+            }
+
+        })());
+
+    }
+
+    await Promise.all(workers);
+
+    return results;
 
 }
 

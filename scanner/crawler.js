@@ -17,13 +17,13 @@ function normalizeUrl(u) {
 
 // ignore static files
 const ignoredExtensions = [
-".png",".jpg",".jpeg",".gif",".svg",".css",".js",".ico",
-".pdf",".zip",".rar",".tar",".gz",".mp4",".mp3",".woff",".woff2"
+    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".css", ".js", ".ico",
+    ".pdf", ".zip", ".rar", ".tar", ".gz", ".mp4", ".mp3", ".woff", ".woff2"
 ];
 
 // interesting keywords for security
 const interestingKeywords = [
-"login","admin","dashboard","api","upload","account","reset","auth"
+    "login", "admin", "dashboard", "api", "upload", "account", "reset", "auth"
 ];
 
 async function crawl(url) {
@@ -117,7 +117,7 @@ async function crawl(url) {
 
             });
 
-        } catch {}
+        } catch { }
     }
 
     while (queue.length > 0 && pages.length < maxPages) {

@@ -1,49 +1,183 @@
 const axios = require("axios");
 
-async function scanSQL(url){
-	const payload = "' OR 1=1--";
+async function scanSQL(url) {
 
-	try{
+	const params = ["id", "user", "search", "query", "q", "page"];
+
+	const payloads = [
+		"' OR '1'='1",
+		"' OR 1=1--",
+		"' OR 'a'='a",
+		"\" OR \"1\"=\"1",
+		"' OR 1=1#",
+		"' UNION SELECT NULL--",
+		"' AND SLEEP(5)--",
+		"' AND 1=2--"
+	];
+
+	const sqlErrors = [
+		"sql syntax",
+		"mysql_fetch",
+		"syntax error",
+		"warning: mysql",
+		"unclosed quotation",
+		"postgresql",
+		"odbc sql server",
+		"sqlite error",
+		"database error",
+		"mysql"
+	];
+
+	let results = [];
+
+	try {
+
+		// -------- BASELINE REQUEST --------
+		let baselineRes = await axios.get(url, {
+			timeout: 8000,
+			validateStatus: () => true,
+			headers: { "User-Agent": "WebVulnScanner/1.0" }
+		});
+
+		let baselineBody = typeof baselineRes.data === "string"
+			? baselineRes.data
+			: JSON.stringify(baselineRes.data);
+
+		// -------- WAF DETECTION --------
+		const serverHeader = (baselineRes.headers.server || "").toLowerCase();
+
+		if (serverHeader.includes("cloudflare") ||
+			serverHeader.includes("sucuri") ||
+			serverHeader.includes("akamai")) {
+			results.push({
+				type: "waf_detected",
+				server: serverHeader
+			});
+		}
+
+		// -------- PARAMETER TESTING --------
+		const tasks = [];
+
+		for (const param of params) {
+
+			for (const payload of payloads) {
+
+				tasks.push(testPayload(url, param, payload, baselineBody));
+
+			}
+
+		}
+
+		const responses = await Promise.all(tasks);
+
+		for (const r of responses) {
+
+			if (r) results.push(r);
+
+		}
+
+	} catch (err) {
+
+		return {
+			status: "scan_failed",
+			error: err.message
+		};
+
+	}
+
+	return {
+		target: url,
+		results
+	};
+
+}
+
+// -------- PAYLOAD TEST FUNCTION --------
+
+async function testPayload(url, param, payload, baselineBody) {
+
+	try {
+
 		const target = new URL(url);
-		target.searchParams.set("id", payload);
+
+		target.searchParams.set(param, payload);
+
+		const start = Date.now();
 
 		const res = await axios.get(target.toString(), {
 			timeout: 8000,
 			validateStatus: () => true,
-			headers: { "User-Agent": "WebVulnScanner/1.0" },
+			headers: { "User-Agent": "WebVulnScanner/1.0" }
 		});
 
-		if (res.status >= 500) {
-			return `Scan inconclusive (server error ${res.status})`;
+		const duration = Date.now() - start;
+
+		const body = typeof res.data === "string"
+			? res.data
+			: JSON.stringify(res.data);
+
+		const lower = body.toLowerCase();
+
+		// -------- TIME-BASED DETECTION --------
+		if (payload.includes("sleep") && duration > 4000) {
+
+			return {
+				parameter: param,
+				payload,
+				type: "time_based_sql_injection",
+				response_time: duration
+			};
+
 		}
 
-		if (res.status === 403 || res.status === 406 || res.status === 429) {
-			return `Scan blocked by target/WAF (${res.status})`;
+		// -------- ERROR-BASED DETECTION --------
+		for (const err of sqlErrors) {
+
+			if (lower.includes(err)) {
+
+				let db = null;
+
+				if (lower.includes("mysql")) db = "MySQL";
+				if (lower.includes("postgres")) db = "PostgreSQL";
+				if (lower.includes("sqlite")) db = "SQLite";
+				if (lower.includes("odbc")) db = "MSSQL";
+
+				return {
+					parameter: param,
+					payload,
+					type: "error_based_sql_injection",
+					database: db,
+					evidence: err
+				};
+
+			}
+
 		}
 
-		const body = (typeof res.data === "string" ? res.data : JSON.stringify(res.data)).toLowerCase();
-		if (
-			body.includes("sql") ||
-			body.includes("database") ||
-			body.includes("syntax error") ||
-			body.includes("mysql") ||
-			body.includes("postgres")
-		) {
-			return "Possible SQL Injection";
+		// -------- BOOLEAN DIFFERENCE DETECTION --------
+		if (body !== baselineBody) {
+
+			return {
+				parameter: param,
+				payload,
+				type: "boolean_based_sql_injection"
+			};
+
 		}
 
-		return "No SQL Injection detected";
-	}catch(err){
+	} catch (err) {
+
 		if (err.code === "ECONNABORTED") {
-			return "Scan timeout";
+			return {
+				parameter: param,
+				payload,
+				type: "timeout"
+			};
 		}
 
-		if (err.code === "ENOTFOUND") {
-			return "Host not found";
-		}
-
-		return `Scan failed: ${err.message}`;
 	}
+
+	return null;
 
 }
 

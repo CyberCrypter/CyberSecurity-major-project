@@ -129,7 +129,7 @@ function scanJWT(token, secret = null, publicKey = null) {
                     forgedToken
                 };
 
-            } catch {}
+            } catch { }
 
         }
 

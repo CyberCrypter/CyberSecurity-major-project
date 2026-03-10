@@ -5,10 +5,10 @@ const path = require("path");
 
 // load paths from wordlist
 const paths = fs
-  .readFileSync(path.join(__dirname, "./wordlists/admin-panels.txt"), "utf8")
-  .split("\n")
-  .map(p => p.trim())
-  .filter(Boolean);
+    .readFileSync(path.join(__dirname, "./wordlists/admin-panels.txt"), "utf8")
+    .split("\n")
+    .map(p => p.trim())
+    .filter(Boolean);
 
 // detect login forms
 function hasLoginForm(body) {

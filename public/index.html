@@ -417,6 +417,8 @@ body{
 .icon-header::before{content:'📡'}
 .icon-ai::before{content:'🤖'}
 .icon-risk::before{content:'☢️'}
+.icon-jwt::before{content:'🪙'}
+.icon-brute::before{content:'🔨'}
 
 /* Error toast */
 .toast{
@@ -527,8 +529,8 @@ body{
 <script>
 /* ===== CONFIG ===== */
 // Change this to your Render backend URL after deployment
-const API_BASE_URL = 'http://localhost:3000'; // Local dev 
-// const API_BASE_URL = 'https://cybersecurity-major-project.onrender.com'; // After deploying to Render
+// const API_BASE_URL = 'http://localhost:3000'; // Local dev 
+const API_BASE_URL = 'https://cybersecurity-major-project.onrender.com'; // After deploying to Render
 
 /* ===== STATE ===== */
 
@@ -596,7 +598,8 @@ function showOverlay(targets) {
     'Directory Enumeration', 'SQL Injection Test', 'Port Scanning',
     'Parameter Discovery', 'JS Endpoint Extraction', 'API Enumeration',
     'Technology Detection', 'Subdomain Recon', 'Secret Analysis',
-    'Web Crawling', 'AI Risk Assessment'
+    'Web Crawling', 'Brute Force Testing', 'JWT Token Analysis',
+    'AI Risk Assessment'
   ];
 
   const log = document.getElementById('moduleLog');
@@ -650,17 +653,17 @@ function renderDashboard(data) {
     <div class="summary-card risk-critical">
       <div class="sc-label">Critical Findings</div>
       <div class="sc-value critical">${summary.critical}</div>
-      <div class="sc-sub">XSS, SQLi, Secrets</div>
+      <div class="sc-sub">XSS, SQLi, Secrets, JWT, Creds</div>
     </div>
     <div class="summary-card risk-high">
       <div class="sc-label">High Risk</div>
       <div class="sc-value high">${summary.high}</div>
-      <div class="sc-sub">Missing headers, Admin panels</div>
+      <div class="sc-sub">Headers, Admin panels, JWT</div>
     </div>
     <div class="summary-card risk-medium">
       <div class="sc-label">Medium Risk</div>
       <div class="sc-value medium">${summary.medium}</div>
-      <div class="sc-sub">Open ports, Parameters</div>
+      <div class="sc-sub">Ports, Params, Login forms</div>
     </div>
     <div class="summary-card risk-info">
       <div class="sc-label">Informational</div>
@@ -813,6 +816,46 @@ function renderDashboard(data) {
       `<div class="result-item vuln">🔐 ${escHtml(v)}</div>`
     );
 
+    // JWT Analysis
+    const jwt = site.jwtAnalysis;
+    if (jwt) {
+      const jwtItems = [];
+      if (jwt.valid) {
+        jwtItems.push(`Algorithm: ${jwt.algorithm || 'N/A'}`);
+        jwtItems.push(`Tokens Found: ${jwt.tokensFound || 0}`);
+        (jwt.vulnerabilities || []).forEach(v => jwtItems.push(`VULN: ${v}`));
+        (jwt.warnings || []).forEach(w => jwtItems.push(`WARN: ${w}`));
+        if (jwt.attackSimulation && jwt.attackSimulation.type) {
+          jwtItems.push(`Attack: ${jwt.attackSimulation.type} — ${jwt.attackSimulation.description || ''}`);
+        }
+      } else {
+        jwtItems.push(jwt.message || jwt.error || 'No JWT tokens detected');
+      }
+      const jwtSeverity = (jwt.vulnerabilities || []).length > 0 ? 'warn' : 'info';
+      html += buildCard('icon-jwt', 'JWT Analysis', jwtItems, jwtSeverity, v => {
+        const cls = v.startsWith('VULN:') ? 'vuln' : v.startsWith('WARN:') ? 'warn' : 'info';
+        return `<div class="result-item ${cls}">${escHtml(v)}</div>`;
+      });
+    }
+
+    // Bruteforce Results
+    const brute = site.bruteforce;
+    if (brute) {
+      const bruteItems = [];
+      bruteItems.push(`Summary: ${brute.summary || 'N/A'}`);
+      bruteItems.push(`Login Forms Found: ${(brute.loginFormsFound || []).length}`);
+      bruteItems.push(`Endpoints Tested: ${(brute.testedEndpoints || []).length}`);
+      bruteItems.push(`Total Attempts: ${brute.attempts || 0}`);
+      (brute.weakCredentials || []).forEach(c =>
+        bruteItems.push(`WEAK: ${c.username}:${c.password} @ ${c.endpoint}`)
+      );
+      const bruteSeverity = (brute.weakCredentials || []).length > 0 ? 'warn' : 'info';
+      html += buildCard('icon-brute', 'Brute Force Analysis', bruteItems, bruteSeverity, v => {
+        const cls = v.startsWith('WEAK:') ? 'vuln' : 'info';
+        return `<div class="result-item ${cls}">${escHtml(v)}</div>`;
+      });
+    }
+
     // Crawled Pages
     html += buildCard('icon-page', 'Crawled Pages', site.pages, 'info', v =>
       `<div class="result-item info">${escHtml(v)}</div>`
@@ -915,19 +958,23 @@ function computeSummary(data) {
   let critical = 0, high = 0, medium = 0, info = 0;
 
   data.forEach(site => {
-    // Critical: XSS, SQL, Secrets
+    // Critical: XSS, SQL, Secrets, JWT vulns, weak credentials
     if (isVuln(site.xss)) critical++;
     if (isVuln(site.sql)) critical++;
     critical += (site.jsSecrets || []).length;
+    critical += (site.jwtAnalysis?.vulnerabilities || []).length;
+    critical += (site.bruteforce?.weakCredentials || []).length;
 
-    // High: Missing headers, admin panels
+    // High: Missing headers, admin panels, JWT warnings
     high += (site.headers?.vulnerabilities || []).length;
     high += (site.adminPanels || []).length;
+    high += (site.jwtAnalysis?.warnings || []).length;
 
-    // Medium: Open ports, directories, parameters
+    // Medium: Open ports, directories, parameters, login forms
     medium += (site.ports || site.openPorts || []).length;
     medium += (site.directories || []).length;
     medium += (site.parameters || []).length;
+    medium += (site.bruteforce?.loginFormsFound || []).length;
 
     // Info: Pages, endpoints, tech, subdomains, APIs
     info += (site.pages || []).length;

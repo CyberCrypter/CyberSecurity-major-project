@@ -4,10 +4,10 @@ const path = require("path");
 
 // load API paths from wordlist
 const apiPaths = fs
-  .readFileSync(path.join(__dirname, "./wordlists/api-endpoints.txt"), "utf8")
-  .split("\n")
-  .map(p => p.trim())
-  .filter(Boolean);
+    .readFileSync(path.join(__dirname, "./wordlists/api-endpoints.txt"), "utf8")
+    .split("\n")
+    .map(p => p.trim())
+    .filter(Boolean);
 
 // ---------- helper functions ----------
 
@@ -122,7 +122,7 @@ async function checkAPI(url, path, baseline, notFoundBaseline) {
         try {
             JSON.parse(body);
             return target + " (JSON API)";
-        } catch {}
+        } catch { }
 
         // GraphQL detection
         if (path.includes("graphql")) {
@@ -142,7 +142,7 @@ async function checkAPI(url, path, baseline, notFoundBaseline) {
                     return target + " (GraphQL endpoint)";
                 }
 
-            } catch {}
+            } catch { }
         }
 
         // swagger / api docs detection

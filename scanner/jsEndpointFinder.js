@@ -1,151 +1,151 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
 
-async function findJSEndpoints(url){
+async function findJSEndpoints(url) {
 
-let endpoints = new Set();
-let fullUrls = new Set();
-let graphql = new Set();
-let secrets = new Set();
+    let endpoints = new Set();
+    let fullUrls = new Set();
+    let graphql = new Set();
+    let secrets = new Set();
 
-try{
+    try {
 
-const res = await axios.get(url,{
-timeout:8000,
-validateStatus:()=>true,
-headers:{
-"User-Agent":"Mozilla/5.0",
-"Accept":"*/*"
-}
-});
+        const res = await axios.get(url, {
+            timeout: 8000,
+            validateStatus: () => true,
+            headers: {
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "*/*"
+            }
+        });
 
-if(res.status >= 400 || typeof res.data !== "string"){
-return {
-target:url,
-endpoints:[],
-urls:[],
-graphql:[],
-secrets:[]
-};
-}
+        if (res.status >= 400 || typeof res.data !== "string") {
+            return {
+                target: url,
+                endpoints: [],
+                urls: [],
+                graphql: [],
+                secrets: []
+            };
+        }
 
-const $ = cheerio.load(res.data);
+        const $ = cheerio.load(res.data);
 
-let scripts = [];
+        let scripts = [];
 
-$("script").each((i,el)=>{
+        $("script").each((i, el) => {
 
-let src = $(el).attr("src");
+            let src = $(el).attr("src");
 
-if(src) scripts.push(src);
+            if (src) scripts.push(src);
 
-});
+        });
 
-// -------- helper function to scan JS --------
+        // -------- helper function to scan JS --------
 
-async function scanJS(script){
+        async function scanJS(script) {
 
-let jsURL;
+            let jsURL;
 
-try{
-jsURL = new URL(script,url).toString();
-}catch{
-return;
-}
+            try {
+                jsURL = new URL(script, url).toString();
+            } catch {
+                return;
+            }
 
-// ignore common static libraries
-if(
-jsURL.includes("jquery") ||
-jsURL.includes("bootstrap") ||
-jsURL.includes("analytics") ||
-jsURL.includes("gtag")
-){
-return;
-}
+            // ignore common static libraries
+            if (
+                jsURL.includes("jquery") ||
+                jsURL.includes("bootstrap") ||
+                jsURL.includes("analytics") ||
+                jsURL.includes("gtag")
+            ) {
+                return;
+            }
 
-try{
+            try {
 
-const js = await axios.get(jsURL,{
-timeout:8000,
-validateStatus:()=>true,
-headers:{
-"User-Agent":"Mozilla/5.0"
-}
-});
+                const js = await axios.get(jsURL, {
+                    timeout: 8000,
+                    validateStatus: () => true,
+                    headers: {
+                        "User-Agent": "Mozilla/5.0"
+                    }
+                });
 
-if(js.status >= 400) return;
+                if (js.status >= 400) return;
 
-const jsBody = typeof js.data === "string"
-? js.data
-: JSON.stringify(js.data);
+                const jsBody = typeof js.data === "string"
+                    ? js.data
+                    : JSON.stringify(js.data);
 
-// limit JS file size
-if(jsBody.length > 500000) return;
+                // limit JS file size
+                if (jsBody.length > 500000) return;
 
-// -------- endpoint detection --------
+                // -------- endpoint detection --------
 
-const endpointRegex = /(\/api\/[a-zA-Z0-9_\-\/]*)|(\/v[0-9]+\/[a-zA-Z0-9_\-\/]*)|(\/auth\/[a-zA-Z0-9_\-\/]*)/g;
+                const endpointRegex = /(\/api\/[a-zA-Z0-9_\-\/]*)|(\/v[0-9]+\/[a-zA-Z0-9_\-\/]*)|(\/auth\/[a-zA-Z0-9_\-\/]*)/g;
 
-let matches = jsBody.match(endpointRegex);
+                let matches = jsBody.match(endpointRegex);
 
-if(matches){
-matches.forEach(m=>endpoints.add(m));
-}
+                if (matches) {
+                    matches.forEach(m => endpoints.add(m));
+                }
 
-// -------- full URL detection --------
+                // -------- full URL detection --------
 
-let urlMatches = jsBody.match(/https?:\/\/[a-zA-Z0-9\-._~:/?#@!$&'()*+,;=%]+/g);
+                let urlMatches = jsBody.match(/https?:\/\/[a-zA-Z0-9\-._~:/?#@!$&'()*+,;=%]+/g);
 
-if(urlMatches){
-urlMatches.forEach(u=>fullUrls.add(u));
-}
+                if (urlMatches) {
+                    urlMatches.forEach(u => fullUrls.add(u));
+                }
 
-// -------- graphql detection --------
+                // -------- graphql detection --------
 
-let gql = jsBody.match(/\/graphql[a-zA-Z0-9\/_-]*/g);
+                let gql = jsBody.match(/\/graphql[a-zA-Z0-9\/_-]*/g);
 
-if(gql){
-gql.forEach(g=>graphql.add(g));
-}
+                if (gql) {
+                    gql.forEach(g => graphql.add(g));
+                }
 
-// -------- secret detection --------
+                // -------- secret detection --------
 
-let secretMatches = jsBody.match(/(api[_-]?key|token|secret)[\"']?\s*[:=]\s*[\"'][^\"']+/gi);
+                let secretMatches = jsBody.match(/(api[_-]?key|token|secret)[\"']?\s*[:=]\s*[\"'][^\"']+/gi);
 
-if(secretMatches){
-secretMatches.forEach(s=>secrets.add(s));
-}
+                if (secretMatches) {
+                    secretMatches.forEach(s => secrets.add(s));
+                }
 
-// -------- interesting endpoints --------
+                // -------- interesting endpoints --------
 
-const interesting = ["admin","internal","debug","private"];
+                const interesting = ["admin", "internal", "debug", "private"];
 
-if(matches){
-matches.forEach(m=>{
-if(interesting.some(k=>m.toLowerCase().includes(k))){
-endpoints.add(m + " (interesting)");
-}
-});
-}
+                if (matches) {
+                    matches.forEach(m => {
+                        if (interesting.some(k => m.toLowerCase().includes(k))) {
+                            endpoints.add(m + " (interesting)");
+                        }
+                    });
+                }
 
-}catch(err){}
-}
+            } catch (err) { }
+        }
 
-// -------- run JS scanning in parallel --------
+        // -------- run JS scanning in parallel --------
 
-const tasks = scripts.map(script=>scanJS(script));
+        const tasks = scripts.map(script => scanJS(script));
 
-await Promise.all(tasks);
+        await Promise.all(tasks);
 
-}catch(err){}
+    } catch (err) { }
 
-return {
-target:url,
-endpoints:[...endpoints],
-urls:[...fullUrls],
-graphql:[...graphql],
-secrets:[...secrets]
-};
+    return {
+        target: url,
+        endpoints: [...endpoints],
+        urls: [...fullUrls],
+        graphql: [...graphql],
+        secrets: [...secrets]
+    };
 
 }
 

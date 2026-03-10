@@ -4,11 +4,11 @@ const path = require("path");
 
 // load directories from wordlist
 const directories = fs
-  .readFileSync(path.join(__dirname, "./wordlists/directories.txt"), "utf8")
+    .readFileSync(path.join(__dirname, "./wordlists/directories.txt"), "utf8")
 
-  .split("\n")
-  .map(d => d.trim())
-  .filter(Boolean);
+    .split("\n")
+    .map(d => d.trim())
+    .filter(Boolean);
 
 // detect directory listing
 function isDirectoryListing(body) {
