@@ -525,6 +525,11 @@ body{
 </div>
 
 <script>
+/* ===== CONFIG ===== */
+// Change this to your Render backend URL after deployment
+const API_BASE_URL = 'http://localhost:3000'; // Local dev
+// const API_BASE_URL = 'https://your-render-backend.onrender.com'; // After deploying to Render
+
 /* ===== STATE ===== */
 let scanResults = null;
 let activeTarget = 0;
@@ -546,7 +551,7 @@ async function startScan() {
   const fetchTimeout = setTimeout(() => controller.abort(), 180000);
 
   try {
-    const res = await fetch('/scan', {
+    const res = await fetch(`${API_BASE_URL}/scan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targets }),
@@ -935,7 +940,7 @@ function computeSummary(data) {
 }
 
 function downloadReport() {
-  window.open('/download-report', '_blank');
+  window.open(`${API_BASE_URL}/download-report`, '_blank');
 }
 
 function showToast(msg) {

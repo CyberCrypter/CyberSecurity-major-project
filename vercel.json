@@ -1,0 +1,11 @@
+{
+  "buildCommand": "echo 'Static frontend - no build needed'",
+  "outputDirectory": "public",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

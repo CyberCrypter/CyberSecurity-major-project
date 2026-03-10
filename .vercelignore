@@ -1,0 +1,8 @@
+node_modules/
+scanner/
+reports/
+.git/
+server.js
+package.json
+vercel.json
+.vercelignore
