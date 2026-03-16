@@ -27,6 +27,29 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
+// ─── Scan result cache ─────────────────────────────────────────────────────────
+// Keyed by sorted target URLs joined with "|". TTL = 30 minutes.
+// Ensures identical inputs always return identical outputs within the window.
+const SCAN_CACHE = new Map();
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+function getCached(targets) {
+    const key = [...targets].sort().join("|");
+    const entry = SCAN_CACHE.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.ts > CACHE_TTL_MS) {
+        SCAN_CACHE.delete(key);
+        return null;
+    }
+    return entry.data;
+}
+
+function setCache(targets, data) {
+    const key = [...targets].sort().join("|");
+    SCAN_CACHE.set(key, { ts: Date.now(), data });
+}
+// ───────────────────────────────────────────────────────────────────────────────
+
 async function safeRun(taskFn, fallbackValue, timeoutMs = 20000) {
     try {
         const timeoutPromise = new Promise((resolve) => {
@@ -54,6 +77,13 @@ app.post("/scan", async (req,res)=>{
             return res.status(400).json({ error: "Provide a valid URL in 'url' or 'targets'." });
         }
 
+        // Return cached result if available (prevents score variance on re-scans)
+        const forceRefresh = req.body.refresh === true || req.query.refresh === "true";
+        if (!forceRefresh) {
+            const cached = getCached(targets);
+            if (cached) return res.json(cached);
+        }
+
         const results = [];
 
         for (const url of targets) {
@@ -65,19 +95,19 @@ app.post("/scan", async (req,res)=>{
                 recon, ports, params, jsEndpoints,
                 apis, technologies, pages, bruteforce
             ] = await Promise.all([
-                safeRun(() => scanHeaders(url), { target: url, vulnerabilities: [] }, 15000),
-                safeRun(() => findAdmin(url), [], 15000),
-                safeRun(() => scanXSS(url), "Scan timeout", 15000),
-                safeRun(() => scanDirectories(url), [], 15000),
-                safeRun(() => scanSQL(url), "Scan timeout", 15000),
-                safeRun(() => reconSubdomains(domain), [], 15000),
-                safeRun(() => scanPorts(domain), [], 15000),
-                safeRun(() => findParams(url), [], 15000),
-                safeRun(() => findJSEndpoints(url), [], 15000),
-                safeRun(() => findAPIs(url), [], 15000),
-                safeRun(() => detectTech(url), [], 15000),
-                safeRun(() => crawl(url), [], 20000),
-                safeRun(() => bruteForceLogin(url), { loginFormsFound: [], testedEndpoints: [], weakCredentials: [], attempts: 0, summary: "Scan timeout" }, 30000),
+                safeRun(() => scanHeaders(url), { target: url, vulnerabilities: [] }, 20000),
+                safeRun(() => findAdmin(url), [], 30000),
+                safeRun(() => scanXSS(url), "Scan timeout", 25000),
+                safeRun(() => scanDirectories(url), [], 30000),
+                safeRun(() => scanSQL(url), "Scan timeout", 25000),
+                safeRun(() => reconSubdomains(domain), [], 20000),
+                safeRun(() => scanPorts(domain), [], 40000),
+                safeRun(() => findParams(url), [], 20000),
+                safeRun(() => findJSEndpoints(url), [], 20000),
+                safeRun(() => findAPIs(url), [], 20000),
+                safeRun(() => detectTech(url), [], 20000),
+                safeRun(() => crawl(url), [], 30000),
+                safeRun(() => bruteForceLogin(url), { loginFormsFound: [], testedEndpoints: [], weakCredentials: [], attempts: 0, summary: "Scan timeout" }, 40000),
             ]);
 
             // Normalize JS endpoint scanner output for compatibility.
@@ -161,6 +191,9 @@ app.post("/scan", async (req,res)=>{
                 aiAnalysis: aiReport,
             });
         }
+
+        // Cache results so repeated scans of the same target return identical data
+        setCache(targets, results);
 
         // Generate report synchronously so /download-report works right after scan
         await safeRun(() => generateReport(results), null, 10000);

@@ -30,7 +30,7 @@ const services = {
     27017: "MongoDB"
 };
 
-async function scanPorts(host, timeout = 1000, concurrency = 50) {
+async function scanPorts(host, timeout = 2500, concurrency = 30) {
 
     if (!host) {
         throw new Error("Host required");

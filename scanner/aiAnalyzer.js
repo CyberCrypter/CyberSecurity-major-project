@@ -2,6 +2,21 @@ function analyze(results) {
     let report = [];
     let riskScore = 0;
 
+    function hasActionableFinding(scanResult, scanner) {
+        if (!(scanResult && typeof scanResult === 'object' && Array.isArray(scanResult.results))) {
+            return /possible|vulnerable|injection|xss|found/i.test(String(scanResult || ""));
+        }
+
+        const xssTypes = new Set(['reflected_xss', 'possible_stored_xss', 'possible_dom_xss']);
+        const sqlTypes = new Set(['error_based_sql_injection', 'time_based_sql_injection', 'boolean_based_sql_injection']);
+
+        return scanResult.results.some((r) => {
+            const type = String((r && r.type) || '').toLowerCase();
+            if (!type || type === 'waf_detected' || type === 'csp_detected' || type === 'timeout') return false;
+            return scanner === 'xss' ? xssTypes.has(type) : sqlTypes.has(type);
+        });
+    }
+
     // Security Headers
     const headerVulns = results.headers?.vulnerabilities || [];
     if (headerVulns.length > 0) {
@@ -11,9 +26,7 @@ function analyze(results) {
 
     // XSS Detection
     const xss = results.xss;
-    const hasXSS = (xss && typeof xss === 'object' && Array.isArray(xss.results))
-        ? xss.results.some(r => r.type !== 'waf_detected')
-        : /possible|vulnerable|found/i.test(String(xss || ""));
+    const hasXSS = hasActionableFinding(xss, 'xss');
     if (hasXSS) {
         report.push("CRITICAL: Cross-Site Scripting (XSS) vulnerability detected \u2014 attacker can inject malicious scripts.");
         riskScore += 25;
@@ -21,9 +34,7 @@ function analyze(results) {
 
     // SQL Injection
     const sql = results.sql;
-    const hasSQL = (sql && typeof sql === 'object' && Array.isArray(sql.results))
-        ? sql.results.some(r => r.type !== 'waf_detected')
-        : /possible|vulnerable|found/i.test(String(sql || ""));
+    const hasSQL = hasActionableFinding(sql, 'sql');
     if (hasSQL) {
         report.push("CRITICAL: SQL Injection vulnerability detected — database data may be compromised.");
         riskScore += 25;

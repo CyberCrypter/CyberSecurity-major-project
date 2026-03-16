@@ -3,586 +3,2344 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Web-Analyzer</title>
+<title>Web Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* ===== RESET & BASE ===== */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg-primary:#06080f;
-  --bg-secondary:#0c1020;
-  --bg-card:#0f1629;
-  --bg-card-hover:#141d36;
-  --border:#1a2744;
-  --border-glow:#00f0ff30;
-  --cyan:#00f0ff;
-  --cyan-dim:#00f0ff88;
-  --magenta:#ff006e;
-  --green:#00ff88;
-  --yellow:#ffd600;
-  --red:#ff3355;
-  --orange:#ff8c00;
-  --text-primary:#e0e8ff;
-  --text-secondary:#7a8bb5;
-  --text-dim:#4a5578;
-  --glass:rgba(12,16,32,0.75);
-  --radius:12px;
-  --radius-sm:8px;
-  --radius-xs:6px;
-  --font-mono:'Courier New',monospace;
-}
-html{scroll-behavior:smooth}
-body{
-  background:var(--bg-primary);
-  color:var(--text-primary);
-  font-family:'Segoe UI','Inter',system-ui,sans-serif;
-  line-height:1.6;
-  overflow-x:hidden;
-  min-height:100vh;
+* , *::before, *::after {
+  box-sizing: border-box;
 }
 
-/* ===== ANIMATED BACKGROUND ===== */
-.bg-grid{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
+:root {
+  --bg-0: #03050d;
+  --bg-1: rgba(8, 14, 32, 0.82);
+  --bg-2: rgba(11, 20, 42, 0.9);
+  --bg-3: rgba(18, 31, 61, 0.95);
+  --panel-border: rgba(93, 231, 255, 0.24);
+  --panel-strong: rgba(93, 231, 255, 0.52);
+  --accent: #66f3ff;
+  --accent-2: #f85775;
+  --accent-3: #80ffbf;
+  --text-0: #edf7ff;
+  --text-1: #adc1dd;
+  --text-2: #6881a4;
+  --danger: #ff6b79;
+  --warning: #ffb562;
+  --ok: #7bffb8;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.5);
+  --shadow-cyan: 0 0 0 1px rgba(102, 243, 255, 0.1), 0 0 30px rgba(102, 243, 255, 0.12);
+  --clip-panel: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+  --clip-btn: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Rajdhani', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html.is-ready .hero-panel,
+html.is-ready .hero-side,
+html.is-ready .control-panel,
+html.is-ready .footer-panel {
+  animation: revealUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.is-ready .hero-side {
+  animation-delay: 120ms;
+}
+
+html.is-ready .control-panel {
+  animation-delay: 220ms;
+}
+
+html.is-ready .footer-panel {
+  animation-delay: 320ms;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-0);
+  color: var(--text-0);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  background:
+    linear-gradient(rgba(118, 255, 248, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(118, 255, 248, 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.2;
+  transform: perspective(1200px) rotateX(74deg) translateY(-8vh);
+  transform-origin: top;
+  animation: gridDrift 16s linear infinite;
+}
+
+body::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0) 2px,
+    rgba(119, 243, 255, 0.045) 2px,
+    rgba(119, 243, 255, 0.045) 3px
+  );
+  mix-blend-mode: screen;
+  opacity: 0.4;
+  animation: scanlineDrift 10s linear infinite;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+.bg-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.2;
+  filter: saturate(1.08) contrast(1.18) brightness(0.42);
+  z-index: -4;
+  animation: videoFloat 12s ease-in-out infinite alternate;
+}
+
+.bg-vignette,
+.bg-aura,
+.bg-noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bg-vignette {
+  z-index: -3;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(102, 243, 255, 0.16), transparent 36%),
+    radial-gradient(circle at 82% 12%, rgba(248, 87, 117, 0.16), transparent 38%),
+    radial-gradient(circle at 50% 100%, rgba(12, 193, 255, 0.1), transparent 42%),
+    linear-gradient(180deg, rgba(3, 5, 13, 0.44), rgba(3, 5, 13, 0.95));
+}
+
+.bg-aura {
+  z-index: -2;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(102, 243, 255, 0.08), transparent 30%),
+    radial-gradient(circle at 78% 72%, rgba(248, 87, 117, 0.08), transparent 30%);
+  filter: blur(40px);
+  animation: auraShift 14s ease-in-out infinite alternate;
+}
+
+.bg-noise {
+  z-index: -1;
+  opacity: 0.18;
   background-image:
-    linear-gradient(rgba(0,240,255,0.03) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,240,255,0.03) 1px,transparent 1px);
-  background-size:60px 60px;
-  animation:gridMove 20s linear infinite;
-}
-@keyframes gridMove{0%{transform:translate(0,0)}100%{transform:translate(60px,60px)}}
-
-.bg-glow{
-  position:fixed;z-index:0;pointer-events:none;border-radius:50%;filter:blur(120px);opacity:0.15;
-}
-.bg-glow-1{top:-10%;left:-5%;width:500px;height:500px;background:var(--cyan)}
-.bg-glow-2{bottom:-10%;right:-5%;width:600px;height:600px;background:var(--magenta)}
-.bg-glow-3{top:40%;left:50%;width:400px;height:400px;background:#6c5ce7;transform:translateX(-50%)}
-
-/* ===== LAYOUT ===== */
-.app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
-.container{max-width:1360px;margin:0 auto;padding:0 24px;width:100%}
-
-/* ===== NAVBAR ===== */
-.navbar{
-  position:sticky;top:0;z-index:100;
-  backdrop-filter:blur(20px);
-  background:rgba(6,8,15,0.8);
-  border-bottom:1px solid var(--border);
-  padding:14px 0;
-}
-.navbar .container{display:flex;align-items:center;justify-content:space-between}
-.logo{display:flex;align-items:center;gap:12px;text-decoration:none}
-.logo-icon{
-  width:38px;height:38px;
-  background:linear-gradient(135deg,var(--cyan),var(--magenta));
-  border-radius:var(--radius-sm);
-  display:flex;align-items:center;justify-content:center;
-  font-weight:900;font-size:16px;color:var(--bg-primary);
-}
-.logo-text{font-size:18px;font-weight:700;letter-spacing:3px;color:var(--cyan)}
-.logo-sub{font-size:10px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-top:-4px}
-.nav-status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary)}
-.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-
-/* ===== HERO SECTION ===== */
-.hero{padding:80px 0 50px;text-align:center}
-.hero-badge{
-  display:inline-flex;align-items:center;gap:8px;
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:20px;padding:6px 16px;margin-bottom:24px;
-  font-size:12px;color:var(--cyan);letter-spacing:1px;text-transform:uppercase;
-}
-.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:pulse 2s infinite}
-.hero h1{
-  font-size:clamp(32px,5vw,56px);font-weight:800;
-  background:linear-gradient(135deg,var(--text-primary) 0%,var(--cyan) 50%,var(--magenta) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;line-height:1.2;margin-bottom:16px;
-}
-.hero p{font-size:17px;color:var(--text-secondary);max-width:600px;margin:0 auto 40px}
-
-/* ===== SCAN INPUT PANEL ===== */
-.scan-panel{
-  max-width:720px;margin:0 auto 32px;
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius);padding:28px;
-  position:relative;overflow:hidden;
-}
-.scan-panel::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--cyan),var(--magenta),transparent);
-}
-.scan-panel label{
-  display:block;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;
-  color:var(--text-dim);margin-bottom:10px;font-weight:600;
-}
-.scan-input-wrap{position:relative;margin-bottom:20px}
-.scan-textarea{
-  width:100%;min-height:100px;resize:vertical;
-  background:var(--bg-primary);border:1px solid var(--border);
-  border-radius:var(--radius-sm);padding:14px 16px;
-  color:var(--text-primary);font-family:var(--font-mono);font-size:14px;
-  transition:all 0.3s;outline:none;
-}
-.scan-textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 3px var(--border-glow)}
-.scan-textarea::placeholder{color:var(--text-dim)}
-.scan-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.btn{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:12px 28px;border-radius:var(--radius-sm);
-  font-size:14px;font-weight:600;cursor:pointer;
-  transition:all 0.3s;border:none;letter-spacing:0.5px;
-}
-.btn-primary{
-  background:linear-gradient(135deg,var(--cyan),#0088aa);
-  color:var(--bg-primary);
-  box-shadow:0 4px 20px rgba(0,240,255,0.25);
-}
-.btn-primary:hover{
-  transform:translateY(-2px);
-  box-shadow:0 6px 30px rgba(0,240,255,0.4);
-}
-.btn-primary:active{transform:translateY(0)}
-.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
-.btn-secondary{
-  background:transparent;border:1px solid var(--border);color:var(--text-secondary);
-}
-.btn-secondary:hover{border-color:var(--cyan-dim);color:var(--cyan)}
-.btn-report{
-  background:transparent;border:1px solid var(--border);color:var(--text-secondary);
-}
-.btn-report:hover{border-color:var(--green);color:var(--green)}
-.scan-hint{margin-left:auto;font-size:12px;color:var(--text-dim)}
-
-/* ===== SCAN PROGRESS OVERLAY ===== */
-.scan-overlay{
-  display:none;position:fixed;inset:0;z-index:200;
-  background:rgba(6,8,15,0.92);backdrop-filter:blur(12px);
-  justify-content:center;align-items:center;flex-direction:column;
-}
-.scan-overlay.active{display:flex}
-.scan-progress-box{
-  text-align:center;max-width:500px;padding:40px;
-}
-.scan-spinner{
-  width:80px;height:80px;margin:0 auto 30px;position:relative;
-}
-.scan-spinner-ring{
-  position:absolute;inset:0;border:3px solid transparent;border-radius:50%;
-}
-.scan-spinner-ring:nth-child(1){
-  border-top-color:var(--cyan);animation:spinA 1.2s linear infinite;
-}
-.scan-spinner-ring:nth-child(2){
-  inset:8px;border-right-color:var(--magenta);animation:spinB 1.5s linear infinite;
-}
-.scan-spinner-ring:nth-child(3){
-  inset:16px;border-bottom-color:var(--green);animation:spinA 2s linear infinite;
-}
-.scan-spinner-core{
-  position:absolute;inset:22px;border-radius:50%;
-  background:radial-gradient(circle,var(--cyan) 0%,transparent 70%);
-  animation:corePulse 2s ease-in-out infinite;
-}
-@keyframes spinA{to{transform:rotate(360deg)}}
-@keyframes spinB{to{transform:rotate(-360deg)}}
-@keyframes corePulse{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1.1)}}
-.scan-status{font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:12px}
-.scan-substatus{font-size:13px;color:var(--text-dim);font-family:var(--font-mono)}
-.scan-module-log{
-  margin-top:24px;text-align:left;font-family:var(--font-mono);font-size:12px;
-  color:var(--text-dim);max-height:180px;overflow-y:auto;
-  background:var(--bg-primary);border:1px solid var(--border);
-  border-radius:var(--radius-sm);padding:14px;
-}
-.scan-module-log .log-line{margin-bottom:4px;opacity:0;animation:fadeIn 0.4s forwards}
-.log-line .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:8px}
-.log-line .dot.active{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
-.log-line .dot.done{background:var(--green)}
-@keyframes fadeIn{to{opacity:1}}
-
-/* ===== RESULTS DASHBOARD ===== */
-.dashboard{display:none;padding:20px 0 60px}
-.dashboard.active{display:block}
-
-/* Summary Strip */
-.summary-strip{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:16px;margin-bottom:32px;
-}
-.summary-card{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;
-  transition:transform 0.3s,border-color 0.3s;
-}
-.summary-card:hover{transform:translateY(-3px);border-color:var(--border-glow)}
-.summary-card::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
-  border-radius:0 0 var(--radius) var(--radius);
-}
-.summary-card.risk-critical::after{background:var(--red)}
-.summary-card.risk-high::after{background:var(--orange)}
-.summary-card.risk-medium::after{background:var(--yellow)}
-.summary-card.risk-low::after{background:var(--green)}
-.summary-card.risk-info::after{background:var(--cyan)}
-.summary-card .sc-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
-.summary-card .sc-value{font-size:28px;font-weight:800;font-family:var(--font-mono)}
-.summary-card .sc-sub{font-size:12px;color:var(--text-secondary);margin-top:4px}
-.sc-value.critical{color:var(--red)}
-.sc-value.high{color:var(--orange)}
-.sc-value.medium{color:var(--yellow)}
-.sc-value.low{color:var(--green)}
-.sc-value.info{color:var(--cyan)}
-
-/* Target Tabs */
-.target-tabs{
-  display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;
-}
-.target-tab{
-  padding:8px 18px;border-radius:var(--radius-xs);font-size:13px;
-  background:var(--bg-card);border:1px solid var(--border);
-  color:var(--text-secondary);cursor:pointer;transition:all 0.2s;
-  font-family:var(--font-mono);
-}
-.target-tab:hover{border-color:var(--cyan-dim)}
-.target-tab.active{background:rgba(0,240,255,0.08);border-color:var(--cyan);color:var(--cyan)}
-
-/* Results Grid */
-.results-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(400px,1fr));
-  gap:20px;margin-bottom:32px;
-}
-@media(max-width:500px){.results-grid{grid-template-columns:1fr}}
-
-.result-card{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius);overflow:hidden;
-  transition:transform 0.3s,border-color 0.3s;
-}
-.result-card:hover{transform:translateY(-2px);border-color:var(--border-glow)}
-.result-card-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:16px 20px;cursor:pointer;user-select:none;
-  border-bottom:1px solid var(--border);transition:background 0.2s;
-}
-.result-card-header:hover{background:var(--bg-card-hover)}
-.rch-left{display:flex;align-items:center;gap:12px}
-.rch-icon{
-  width:36px;height:36px;border-radius:var(--radius-xs);
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;flex-shrink:0;
-}
-.rch-title{font-size:14px;font-weight:600;letter-spacing:0.3px}
-.rch-count{
-  font-size:12px;font-family:var(--font-mono);
-  padding:3px 10px;border-radius:12px;
-  background:rgba(0,240,255,0.08);color:var(--cyan);
-}
-.rch-count.warn{background:rgba(255,0,110,0.1);color:var(--magenta)}
-.rch-count.safe{background:rgba(0,255,136,0.1);color:var(--green)}
-.rch-chevron{color:var(--text-dim);transition:transform 0.3s;font-size:18px}
-.result-card.open .rch-chevron{transform:rotate(180deg)}
-.result-card-body{
-  max-height:0;overflow:hidden;transition:max-height 0.4s ease;
-}
-.result-card.open .result-card-body{max-height:2000px}
-.result-card-content{padding:16px 20px}
-.result-item{
-  padding:8px 12px;margin-bottom:6px;border-radius:var(--radius-xs);
-  font-size:13px;font-family:var(--font-mono);
-  background:var(--bg-primary);border:1px solid transparent;
-  word-break:break-all;transition:border-color 0.2s;
-}
-.result-item:hover{border-color:var(--border)}
-.result-item.vuln{border-left:3px solid var(--red)}
-.result-item.warn{border-left:3px solid var(--yellow)}
-.result-item.info{border-left:3px solid var(--cyan)}
-.result-item.safe{border-left:3px solid var(--green)}
-.result-empty{color:var(--text-dim);font-size:13px;font-style:italic;padding:8px 0}
-
-/* AI Analysis Card */
-.ai-card{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius);padding:24px;margin-bottom:32px;
-  position:relative;overflow:hidden;
-}
-.ai-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--magenta),var(--cyan),var(--green));
-}
-.ai-card-title{
-  display:flex;align-items:center;gap:10px;
-  font-size:16px;font-weight:700;margin-bottom:16px;letter-spacing:0.5px;
-}
-.ai-card-title span{
-  background:linear-gradient(135deg,var(--cyan),var(--magenta));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.ai-insights{display:flex;flex-direction:column;gap:10px}
-.ai-insight{
-  display:flex;align-items:flex-start;gap:10px;padding:12px 16px;
-  background:var(--bg-primary);border-radius:var(--radius-sm);
-  border:1px solid var(--border);font-size:13px;
-}
-.ai-insight-icon{flex-shrink:0;margin-top:2px}
-.ai-insight.critical .ai-insight-icon{color:var(--red)}
-.ai-insight.warning .ai-insight-icon{color:var(--yellow)}
-.ai-insight.info .ai-insight-icon{color:var(--cyan)}
-
-/* Headers Section */
-.headers-vuln{
-  display:flex;align-items:center;gap:8px;padding:8px 12px;
-  margin-bottom:6px;border-radius:var(--radius-xs);
-  background:var(--bg-primary);border-left:3px solid var(--yellow);
-  font-size:13px;font-family:var(--font-mono);
+    radial-gradient(rgba(255, 255, 255, 0.18) 0.5px, transparent 0.5px),
+    radial-gradient(rgba(255, 255, 255, 0.08) 0.5px, transparent 0.5px);
+  background-position: 0 0, 12px 12px;
+  background-size: 24px 24px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent 95%);
 }
 
-/* Severity Badges */
-.severity{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:2px 8px;border-radius:10px;font-size:11px;
-  font-weight:600;letter-spacing:0.5px;text-transform:uppercase;
-}
-.severity.critical{background:rgba(255,51,85,0.15);color:var(--red)}
-.severity.high{background:rgba(255,140,0,0.15);color:var(--orange)}
-.severity.medium{background:rgba(255,214,0,0.15);color:var(--yellow)}
-.severity.low{background:rgba(0,255,136,0.15);color:var(--green)}
-
-/* Risk Meter */
-.risk-meter{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius);padding:24px;margin-bottom:32px;
-  display:flex;align-items:center;gap:30px;flex-wrap:wrap;
-}
-.risk-meter-visual{flex:0 0 120px;text-align:center}
-.risk-ring{
-  width:100px;height:100px;position:relative;margin:0 auto 8px;
-}
-.risk-ring svg{transform:rotate(-90deg);width:100%;height:100%}
-.risk-ring circle{fill:none;stroke-width:8;stroke-linecap:round}
-.risk-ring .bg{stroke:var(--border)}
-.risk-ring .fg{transition:stroke-dashoffset 1s ease;stroke:var(--cyan)}
-.risk-ring .score-text{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:26px;font-weight:800;font-family:var(--font-mono);
-}
-.risk-meter-details{flex:1;min-width:200px}
-.risk-meter-title{font-size:14px;font-weight:600;margin-bottom:12px;letter-spacing:0.5px}
-.risk-bars{display:flex;flex-direction:column;gap:8px}
-.risk-bar{display:flex;align-items:center;gap:10px;font-size:12px}
-.risk-bar-label{width:80px;color:var(--text-secondary)}
-.risk-bar-track{flex:1;height:6px;background:var(--bg-primary);border-radius:3px;overflow:hidden}
-.risk-bar-fill{height:100%;border-radius:3px;transition:width 1s ease}
-.risk-bar-count{width:24px;text-align:right;font-family:var(--font-mono);font-weight:600}
-
-/* Footer */
-.footer{
-  text-align:center;padding:30px 0;border-top:1px solid var(--border);
-  color:var(--text-dim);font-size:12px;letter-spacing:1px;margin-top:auto;
+.app-shell {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:var(--bg-primary)}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
-
-/* Animations */
-.fade-up{opacity:0;transform:translateY(20px);animation:fadeUp 0.6s forwards}
-@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
-.stagger-1{animation-delay:0.1s}
-.stagger-2{animation-delay:0.2s}
-.stagger-3{animation-delay:0.3s}
-.stagger-4{animation-delay:0.4s}
-.stagger-5{animation-delay:0.5s}
-
-/* ===== THEME ICONS (CSS-only) ===== */
-.icon-shield::before{content:'🛡️'}
-.icon-scan::before{content:'⚡'}
-.icon-port::before{content:'🔌'}
-.icon-dir::before{content:'📂'}
-.icon-admin::before{content:'🔑'}
-.icon-xss::before{content:'💉'}
-.icon-sql::before{content:'🗄️'}
-.icon-sub::before{content:'🌐'}
-.icon-tech::before{content:'⚙️'}
-.icon-api::before{content:'🔗'}
-.icon-param::before{content:'📎'}
-.icon-page::before{content:'📄'}
-.icon-js::before{content:'📜'}
-.icon-secret::before{content:'🔐'}
-.icon-header::before{content:'📡'}
-.icon-ai::before{content:'🤖'}
-.icon-risk::before{content:'☢️'}
-.icon-jwt::before{content:'🪙'}
-.icon-brute::before{content:'🔨'}
-
-/* Error toast */
-.toast{
-  position:fixed;bottom:30px;right:30px;z-index:300;
-  padding:14px 22px;border-radius:var(--radius-sm);
-  background:var(--bg-card);border:1px solid var(--red);
-  color:var(--red);font-size:14px;
-  transform:translateY(100px);opacity:0;transition:all 0.4s;
+.container {
+  width: min(1240px, calc(100% - 32px));
+  margin: 0 auto;
 }
-.toast.show{transform:translateY(0);opacity:1}
 
-/* Responsive */
-@media(max-width:768px){
-  .hero{padding:50px 0 30px}
-  .hero h1{font-size:28px}
-  .scan-panel{padding:20px}
-  .risk-meter{flex-direction:column;text-align:center}
-  .results-grid{grid-template-columns:1fr}
-  .summary-strip{grid-template-columns:repeat(2,1fr)}
+.panel {
+  position: relative;
+  background: linear-gradient(180deg, rgba(13, 22, 46, 0.88), rgba(7, 12, 26, 0.82));
+  border: 1px solid var(--panel-border);
+  clip-path: var(--clip-panel);
+  box-shadow: var(--shadow-lg), var(--shadow-cyan);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+.panel::before,
+.panel::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.panel::before {
+  inset: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  clip-path: var(--clip-panel);
+}
+
+.panel::after {
+  right: 18px;
+  top: 0;
+  width: 92px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow: 0 0 20px rgba(102, 243, 255, 0.45);
+}
+
+.panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.panel::selection,
+.panel *::selection {
+  background: rgba(102, 243, 255, 0.26);
+  color: var(--text-0);
+}
+
+.panel::marker {
+  display: none;
+}
+
+.panel::before {
+  animation: frameFlicker 9s linear infinite;
+}
+
+.panel::after {
+  animation: edgeBlink 4.2s ease-in-out infinite;
+}
+
+.panel .holo-sweep,
+.scan-overlay-box .holo-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.panel .holo-sweep::before,
+.scan-overlay-box .holo-sweep::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  width: 22%;
+  left: -28%;
+  background: linear-gradient(90deg, transparent, rgba(102, 243, 255, 0.08), transparent);
+  transform: skewX(-18deg);
+  animation: sweepAcross 7.5s linear infinite;
+}
+
+.micro-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.micro-label::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px rgba(102, 243, 255, 0.9);
+  animation: beaconPulse 1.8s ease-in-out infinite;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid rgba(102, 243, 255, 0.1);
+  background: rgba(4, 8, 20, 0.58);
+  backdrop-filter: blur(18px);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 84px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  clip-path: var(--clip-btn);
+  color: #031019;
+  background: linear-gradient(135deg, var(--accent), #b5f5ff 54%, var(--accent-2));
+  box-shadow: 0 0 24px rgba(102, 243, 255, 0.38);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.brand-subtitle {
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.signal {
+  display: grid;
+  gap: 2px;
+  min-width: 160px;
+  padding: 10px 14px;
+  border: 1px solid rgba(102, 243, 255, 0.14);
+  background: rgba(7, 15, 32, 0.78);
+  clip-path: var(--clip-btn);
+  animation: softFlicker 8s linear infinite;
+}
+
+.signal-label,
+.signal-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.signal-label {
+  color: var(--text-2);
+}
+
+.signal-value {
+  color: var(--accent);
+}
+
+.signal-value::before {
+  content: "link stable ";
+  color: var(--accent-3);
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 22px;
+  padding: 34px 0 22px;
+}
+
+.hero-panel,
+.hero-side,
+.control-panel,
+.scan-overlay-box,
+.footer-panel,
+.modal__body,
+.summary-card,
+.insight-card,
+.result-card,
+.risk-panel {
+  border-radius: 0;
+}
+
+.hero-panel {
+  padding: 34px 34px 30px;
+}
+
+.hero-title-wrap {
+  position: relative;
+}
+
+.hero-title {
+  position: relative;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 4vw, 5.6rem);
+  line-height: 0.94;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 0 0 40px rgba(102, 243, 255, 0.15);
+  animation: textBreathe 5.5s ease-in-out infinite;
+}
+
+.hero-title span {
+  display: block;
+  color: var(--text-0);
+}
+
+.hero-title::before,
+.hero-title::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.42;
+}
+
+.hero-title::before {
+  color: rgba(102, 243, 255, 0.6);
+  transform: translate(2px, -1px);
+  clip-path: inset(0 0 62% 0);
+  animation: heroGlitchA 5.2s infinite steps(1);
+}
+
+.hero-title::after {
+  color: rgba(248, 87, 117, 0.58);
+  transform: translate(-2px, 1px);
+  clip-path: inset(68% 0 0 0);
+  animation: heroGlitchB 4.6s infinite steps(1);
+}
+
+.hero-copy {
+  max-width: 780px;
+  margin: 18px 0 0;
+  color: var(--text-1);
+  font-size: clamp(1.08rem, 2vw, 1.35rem);
+  line-height: 1.48;
+  animation: copyDrift 7s ease-in-out infinite;
+}
+
+.hero-copy strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 26px;
+}
+
+.metric-tile {
+  position: relative;
+  padding: 16px 16px 14px;
+  min-height: 120px;
+  background: linear-gradient(180deg, rgba(15, 25, 54, 0.74), rgba(8, 13, 29, 0.88));
+  border: 1px solid rgba(102, 243, 255, 0.14);
+  clip-path: var(--clip-btn);
+  animation: tileFloat 6.4s ease-in-out infinite;
+}
+
+.metric-tile:nth-child(2) {
+  animation-delay: 0.8s;
+}
+
+.metric-tile:nth-child(3) {
+  animation-delay: 1.6s;
+}
+
+.metric-tile::before {
+  content: attr(data-code);
+  display: block;
+  margin-bottom: 12px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 2rem;
+}
+
+.metric-label {
+  color: var(--text-1);
+  font-size: 0.98rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.metric-note {
+  margin-top: 8px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.hero-side {
+  padding: 28px 26px;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.hero-side .side-header {
+  display: grid;
+  gap: 10px;
+}
+
+.hero-side h2,
+.control-title,
+.section-title,
+.modal h2,
+.summary-value,
+.risk-score {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+}
+
+.hero-side h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  letter-spacing: 0.12em;
+}
+
+.hero-side p {
+  margin: 0;
+  color: var(--text-1);
+  font-size: 1rem;
+}
+
+.reference-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.reference-item {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(102, 243, 255, 0.12);
+  background: rgba(7, 13, 30, 0.74);
+  clip-path: var(--clip-btn);
+  animation: floatSoft 8s ease-in-out infinite;
+}
+
+.reference-item:nth-child(2) {
+  animation-delay: 1.2s;
+}
+
+.reference-item:nth-child(3) {
+  animation-delay: 2.4s;
+}
+
+.reference-item:nth-child(4) {
+  animation-delay: 3.6s;
+}
+
+.reference-label {
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.reference-value {
+  color: var(--text-0);
+  font-size: 1rem;
+}
+
+.instruction {
+  position: absolute;
+  right: 28px;
+  top: -28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 231, 163, 0.92);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transform: rotate(-4deg);
+  animation: scribbleBob 3.2s ease-in-out infinite;
+}
+
+.instruction::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
+}
+
+.control-section {
+  padding: 8px 0 8px;
+}
+
+.control-panel {
+  padding: 32px;
+}
+
+.control-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.control-title {
+  margin: 0;
+  font-size: 1.55rem;
+  letter-spacing: 0.12em;
+}
+
+.control-copy {
+  max-width: 660px;
+  margin-top: 8px;
+  color: var(--text-1);
+  font-size: 1.03rem;
+}
+
+.control-meta {
+  min-width: 240px;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(102, 243, 255, 0.12);
+  background: rgba(4, 9, 22, 0.7);
+  clip-path: var(--clip-btn);
+}
+
+.control-meta span {
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.scan-textarea {
+  width: 100%;
+  min-height: 170px;
+  resize: vertical;
+  border: 1px solid rgba(102, 243, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(5, 10, 23, 0.96), rgba(9, 18, 38, 0.9)),
+    linear-gradient(90deg, rgba(102, 243, 255, 0.03), transparent);
+  color: var(--text-0);
+  clip-path: var(--clip-panel);
+  padding: 24px 22px;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  background-size: 100% 100%, 220% 100%;
+  animation: terminalGlow 9s linear infinite;
+}
+
+.scan-textarea::placeholder {
+  color: var(--text-2);
+}
+
+.scan-textarea:focus {
+  border-color: var(--panel-strong);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 0 0 4px rgba(102, 243, 255, 0.08);
+}
+
+.scan-actions {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.scan-hint {
+  margin-left: auto;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cyber-btn {
+  --btn-accent: var(--accent);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 0;
+  background: transparent;
+  color: var(--btn-accent);
+  clip-path: var(--clip-btn);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  font-family: var(--font-display);
+  isolation: isolate;
+  transform: translateZ(0);
+}
+
+.cyber-btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cyber-btn .backdrop,
+.cyber-btn .glitch {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--clip-btn);
+}
+
+.cyber-btn .backdrop {
+  z-index: -2;
+  background: linear-gradient(180deg, rgba(12, 24, 52, 0.9), rgba(8, 14, 28, 0.94));
+  border: 1px solid rgba(102, 243, 255, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025), 0 0 24px rgba(102, 243, 255, 0.08);
+  overflow: hidden;
+}
+
+.cyber-btn .backdrop::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  left: -45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.24), transparent);
+  transform: skewX(-22deg);
+  opacity: 0;
+}
+
+.cyber-btn .backdrop::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--btn-accent);
+  border-bottom: 2px solid var(--btn-accent);
+}
+
+.cyber-btn kbd,
+.cyber-btn .label,
+.cyber-btn .letters {
+  position: relative;
+  z-index: 2;
+}
+
+.cyber-btn kbd {
+  min-width: 28px;
+  min-height: 28px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 6px;
+  background: var(--btn-accent);
+  color: #04111a;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: 0 0 18px rgba(102, 243, 255, 0.35);
+}
+
+.cyber-btn .label {
+  white-space: nowrap;
+}
+
+.cyber-btn .glitch {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  color: var(--accent-2);
+  text-shadow: 0 0 10px rgba(248, 87, 117, 0.45);
+  pointer-events: none;
+}
+
+.cyber-btn .letters {
+  display: inline-flex;
+  gap: 0.02em;
+}
+
+.cyber-btn:hover:not([disabled]),
+.cyber-btn:focus-visible {
+  color: #04111a;
+  outline: none;
+}
+
+.cyber-btn:hover:not([disabled]) .backdrop,
+.cyber-btn:focus-visible .backdrop,
+.cyber-btn[data-pending="true"] .backdrop {
+  background: linear-gradient(180deg, rgba(102, 243, 255, 0.98), rgba(68, 203, 255, 0.9));
+}
+
+.cyber-btn:hover:not([disabled]) .backdrop::before,
+.cyber-btn:focus-visible .backdrop::before,
+.cyber-btn[data-pending="true"] .backdrop::before {
+  opacity: 1;
+  animation: sheen 1.15s ease-out;
+}
+
+.cyber-btn:hover:not([disabled]) kbd,
+.cyber-btn:focus-visible kbd,
+.cyber-btn[data-pending="true"] kbd {
+  background: #04111a;
+  color: var(--btn-accent);
+  box-shadow: 0 0 18px rgba(4, 17, 26, 0.3);
+}
+
+.cyber-btn:hover:not([disabled]) .glitch,
+.cyber-btn:focus-visible .glitch {
+  display: inline-flex;
+  animation: glitchFlash 1.5s infinite steps(2);
+}
+
+.cyber-btn[data-pending="true"] .glitch {
+  display: inline-flex;
+  animation: glitchFlash 0.85s infinite steps(2), buttonShake 0.85s infinite linear;
+}
+
+.cyber-btn.primary {
+  --btn-accent: var(--accent);
+}
+
+.cyber-btn.alt {
+  --btn-accent: var(--accent-3);
+}
+
+.cyber-btn.ghost {
+  --btn-accent: #f7d47a;
+}
+
+.cyber-btn.small {
+  min-height: 46px;
+  padding: 0 14px;
+  font-size: 0.78rem;
+}
+
+.status-band {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.status-chip {
+  padding: 12px 14px;
+  border: 1px solid rgba(102, 243, 255, 0.12);
+  background: rgba(6, 11, 26, 0.72);
+  clip-path: var(--clip-btn);
+  animation: softFlicker 10s linear infinite;
+}
+
+.status-chip:nth-child(2) {
+  animation-delay: 0.9s;
+}
+
+.status-chip:nth-child(3) {
+  animation-delay: 1.8s;
+}
+
+.status-chip strong,
+.status-chip span {
+  display: block;
+}
+
+.status-chip strong {
+  color: var(--text-0);
+  font-family: var(--font-display);
+  font-size: 0.96rem;
+  letter-spacing: 0.08em;
+}
+
+.status-chip span {
+  margin-top: 6px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.scan-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(2, 5, 14, 0.82);
+  backdrop-filter: blur(14px);
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.scan-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+.scan-overlay-box {
+  width: min(720px, 100%);
+  padding: 30px;
+  transform: translateY(18px) scale(0.98);
+  opacity: 0;
+}
+
+.scan-overlay.active .scan-overlay-box {
+  animation: overlayIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.spinner-wrap {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.scan-spinner {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  flex: 0 0 auto;
+}
+
+.scan-spinner-ring,
+.scan-spinner-core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.scan-spinner-ring {
+  border: 2px solid transparent;
+}
+
+.scan-spinner-ring.ring-a {
+  border-top-color: var(--accent);
+  animation: spin 1.15s linear infinite;
+}
+
+.scan-spinner-ring.ring-b {
+  inset: 9px;
+  border-right-color: var(--accent-2);
+  animation: spinReverse 1.55s linear infinite;
+}
+
+.scan-spinner-ring.ring-c {
+  inset: 18px;
+  border-bottom-color: var(--accent-3);
+  animation: spin 1.9s linear infinite;
+}
+
+.scan-spinner-core {
+  inset: 29px;
+  background: radial-gradient(circle, rgba(102, 243, 255, 0.9), rgba(102, 243, 255, 0));
+  filter: blur(1px);
+  animation: pulseCore 1.6s ease-in-out infinite;
+}
+
+.scan-status-block {
+  display: grid;
+  gap: 6px;
+}
+
+.scan-status {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scan-substatus {
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.scan-module-log {
+  margin-top: 24px;
+  max-height: 260px;
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid rgba(102, 243, 255, 0.12);
+  background: rgba(3, 6, 16, 0.82);
+  clip-path: var(--clip-panel);
+}
+
+.log-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: fadeSlide 0.28s forwards;
+}
+
+.log-line .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.log-line .dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(102, 243, 255, 0.85);
+}
+
+.log-line .dot.done {
+  background: var(--accent-3);
+}
+
+.dashboard {
+  display: none;
+  padding: 18px 0 48px;
+}
+
+.dashboard.active {
+  display: block;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  padding: 18px;
+}
+
+.summary-card,
+.insight-card,
+.target-tab,
+.result-card {
+  opacity: 1;
+  transform: none;
+}
+
+.dashboard.is-animated .summary-card,
+.dashboard.is-animated .insight-card,
+.dashboard.is-animated .target-tab,
+.dashboard.is-animated .result-card {
+  animation: dashboardReveal 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+.summary-card.risk-critical { --summary-color: var(--danger); }
+.summary-card.risk-high { --summary-color: var(--warning); }
+.summary-card.risk-medium { --summary-color: #ffe37f; }
+.summary-card.risk-info { --summary-color: var(--accent); }
+.summary-card.risk-low { --summary-color: var(--ok); }
+
+.summary-label {
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.summary-value {
+  margin-top: 10px;
+  font-size: clamp(1.4rem, 3.2vw, 2rem);
+  color: var(--summary-color);
+  letter-spacing: 0.08em;
+}
+
+.summary-sub {
+  margin-top: 6px;
+  color: var(--text-1);
+  font-size: 0.98rem;
+}
+
+.risk-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.risk-panel {
+  padding: 22px;
+}
+
+.risk-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+}
+
+.risk-score {
+  font-size: clamp(1.45rem, 4.2vw, 2.2rem);
+  line-height: 1.05;
+  max-width: 100%;
+  text-align: right;
+  word-break: break-word;
+}
+
+.risk-ring {
+  position: relative;
+  width: 152px;
+  height: 152px;
+  margin: 0 auto 12px;
+}
+
+.risk-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.risk-ring circle {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+.risk-ring .bg {
+  stroke: rgba(102, 243, 255, 0.12);
+}
+
+.risk-ring .fg {
+  transition: stroke-dashoffset 0.8s ease;
+}
+
+.risk-ring-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+}
+
+.risk-meta {
+  text-align: center;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+.risk-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.risk-bar {
+  display: grid;
+  grid-template-columns: 86px 1fr 30px;
+  align-items: center;
+  gap: 10px;
+}
+
+.risk-bar-label,
+.risk-bar-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.risk-bar-track {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.risk-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.8s ease;
+}
+
+.insight-card {
+  padding: 22px;
+}
+
+.insight-list {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-insight {
+  padding: 14px 16px;
+  border: 1px solid rgba(102, 243, 255, 0.12);
+  background: rgba(5, 10, 22, 0.82);
+  clip-path: var(--clip-btn);
+}
+
+.ai-insight.critical {
+  border-color: rgba(255, 107, 121, 0.28);
+}
+
+.ai-insight.warning {
+  border-color: rgba(255, 181, 98, 0.28);
+}
+
+.ai-insight.info {
+  border-color: rgba(102, 243, 255, 0.18);
+}
+
+.ai-insight-label {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ai-insight.critical .ai-insight-label { color: var(--danger); }
+.ai-insight.warning .ai-insight-label { color: var(--warning); }
+.ai-insight.info .ai-insight-label { color: var(--accent); }
+
+.target-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.target-tab {
+  padding: 11px 16px;
+  border: 1px solid rgba(102, 243, 255, 0.14);
+  background: rgba(7, 14, 30, 0.72);
+  color: var(--text-1);
+  clip-path: var(--clip-btn);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.target-tab.active {
+  border-color: rgba(102, 243, 255, 0.45);
+  background: linear-gradient(180deg, rgba(102, 243, 255, 0.16), rgba(14, 30, 50, 0.9));
+  color: var(--accent);
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.result-card {
+  overflow: hidden;
+}
+
+.result-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(102, 243, 255, 0.7), transparent);
+  opacity: 0.32;
+  animation: edgeBlink 3.6s ease-in-out infinite;
+}
+
+.result-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 18px;
+  cursor: pointer;
+}
+
+.result-card-header:hover {
+  background: rgba(102, 243, 255, 0.04);
+}
+
+.rch-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rch-icon {
+  min-width: 42px;
+  min-height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(102, 243, 255, 0.18);
+  background: rgba(4, 11, 25, 0.78);
+  clip-path: var(--clip-btn);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+}
+
+.rch-title {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rch-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 38px;
+  min-height: 30px;
+  padding: 0 10px;
+  clip-path: var(--clip-btn);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.rch-count.warn {
+  background: rgba(248, 87, 117, 0.16);
+  color: var(--danger);
+}
+
+.rch-count.safe {
+  background: rgba(123, 255, 184, 0.12);
+  color: var(--ok);
+}
+
+.rch-count.info {
+  background: rgba(102, 243, 255, 0.12);
+  color: var(--accent);
+}
+
+.rch-chevron {
+  color: var(--text-2);
+  font-size: 1.2rem;
+  transition: transform 0.28s ease;
+}
+
+.result-card.open .rch-chevron {
+  transform: rotate(180deg);
+}
+
+.result-card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+.result-card.open .result-card-body {
+  max-height: 2200px;
+}
+
+.result-card-content {
+  padding: 0 18px 18px;
+}
+
+.result-card.open .result-card-content {
+  animation: contentBloom 0.28s ease;
+}
+
+.result-item,
+.headers-vuln,
+.result-empty {
+  padding: 12px 14px;
+  margin-top: 10px;
+  border: 1px solid rgba(102, 243, 255, 0.12);
+  background: rgba(3, 8, 18, 0.82);
+  clip-path: var(--clip-btn);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.result-item.vuln,
+.headers-vuln {
+  border-color: rgba(255, 107, 121, 0.24);
+}
+
+.result-item.warn {
+  border-color: rgba(255, 181, 98, 0.24);
+}
+
+.result-item.info {
+  border-color: rgba(102, 243, 255, 0.16);
+}
+
+.result-item.safe,
+.result-empty {
+  border-color: rgba(123, 255, 184, 0.2);
+}
+
+.result-empty {
+  color: var(--text-2);
+}
+
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 260;
+  min-width: 260px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 107, 121, 0.4);
+  background: rgba(20, 7, 17, 0.96);
+  color: #ffdfe5;
+  clip-path: var(--clip-panel);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  transform: translateY(120px);
+  opacity: 0;
+  transition: transform 0.28s ease, opacity 0.28s ease;
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.modal {
+  width: min(720px, calc(100vw - 26px));
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text-0);
+  opacity: 0;
+  transform: translateY(28px) scale(0.96);
+  transition: opacity 0.24s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.modal:popover-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.modal::backdrop {
+  background: rgba(4, 7, 16, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.modal__body {
+  padding: 28px;
+}
+
+.modal:popover-open .modal__body {
+  animation: modalPulse 0.45s ease;
+}
+
+.modal__body h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: 0.14em;
+}
+
+.modal__body p {
+  margin: 0;
+  color: var(--text-1);
+  font-size: 1.04rem;
+  line-height: 1.55;
+}
+
+.modal-copy {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.modal-chip {
+  padding: 12px 14px;
+  border: 1px solid rgba(102, 243, 255, 0.12);
+  background: rgba(7, 14, 28, 0.78);
+  clip-path: var(--clip-btn);
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.modal:popover-open .modal-chip {
+  animation: modalChipIn 0.36s ease forwards;
+}
+
+.modal:popover-open .modal-chip:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.modal:popover-open .modal-chip:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.modal:popover-open .modal-chip:nth-child(4) {
+  animation-delay: 240ms;
+}
+
+.modal-chip strong,
+.modal-chip span {
+  display: block;
+}
+
+.modal-chip strong {
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.modal-chip span {
+  color: var(--text-0);
+}
+
+.modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.footer-wrap {
+  padding: 8px 0 26px;
+}
+
+.footer-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+}
+
+.footer-copy,
+.footer-note {
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes heroGlitchA {
+  0%, 87%, 100% { opacity: 0.32; }
+  88% { opacity: 0.76; transform: translate(6px, -1px); }
+  89% { opacity: 0.14; transform: translate(0, 0); }
+  90% { opacity: 0.6; transform: translate(-4px, 1px); }
+}
+
+@keyframes gridDrift {
+  from { transform: perspective(1200px) rotateX(74deg) translate3d(0, -8vh, 0); }
+  to { transform: perspective(1200px) rotateX(74deg) translate3d(0, -8vh, 0) translateX(56px); }
+}
+
+@keyframes scanlineDrift {
+  from { transform: translateY(0); }
+  to { transform: translateY(12px); }
+}
+
+@keyframes videoFloat {
+  0% { transform: scale(1) translate3d(0, 0, 0); }
+  100% { transform: scale(1.045) translate3d(0, -1.5%, 0); }
+}
+
+@keyframes auraShift {
+  0% { transform: translate3d(-2%, 0, 0) scale(1); opacity: 0.8; }
+  100% { transform: translate3d(2%, -2%, 0) scale(1.08); opacity: 1; }
+}
+
+@keyframes frameFlicker {
+  0%, 96%, 100% { opacity: 1; }
+  97% { opacity: 0.7; }
+  98% { opacity: 0.92; }
+  99% { opacity: 0.62; }
+}
+
+@keyframes edgeBlink {
+  0%, 100% { opacity: 0.2; filter: brightness(1); }
+  50% { opacity: 0.9; filter: brightness(1.4); }
+}
+
+@keyframes sweepAcross {
+  0% { left: -32%; }
+  100% { left: 118%; }
+}
+
+@keyframes beaconPulse {
+  0%, 100% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.18); opacity: 1; }
+}
+
+@keyframes softFlicker {
+  0%, 92%, 100% { opacity: 1; }
+  93% { opacity: 0.85; }
+  94% { opacity: 1; }
+  95% { opacity: 0.78; }
+  96% { opacity: 1; }
+}
+
+@keyframes textBreathe {
+  0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 10px rgba(102, 243, 255, 0.18)); }
+  50% { transform: translateY(-2px); filter: drop-shadow(0 0 18px rgba(248, 87, 117, 0.15)); }
+}
+
+@keyframes copyDrift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes tileFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes floatSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes scribbleBob {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  50% { transform: rotate(-6deg) translateY(-3px); }
+}
+
+@keyframes terminalGlow {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 0 0, 220% 0; }
+}
+
+@keyframes sheen {
+  0% { left: -45%; }
+  100% { left: 125%; }
+}
+
+@keyframes buttonShake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(1px, -1px); }
+  40% { transform: translate(-1px, 1px); }
+  60% { transform: translate(1px, 0); }
+  80% { transform: translate(-1px, -1px); }
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dashboardReveal {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes contentBloom {
+  from { opacity: 0.25; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modalPulse {
+  0% { filter: brightness(1.25); }
+  100% { filter: brightness(1); }
+}
+
+@keyframes modalChipIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(22px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes heroGlitchB {
+  0%, 72%, 100% { opacity: 0.32; }
+  73% { opacity: 0.76; transform: translate(-5px, 2px); }
+  74% { opacity: 0.1; transform: translate(0, 0); }
+  75% { opacity: 0.56; transform: translate(4px, -1px); }
+}
+
+@keyframes glitchFlash {
+  0%, 84%, 100% { clip-path: inset(0 0 0 0); transform: translate(0, 0); }
+  85% { clip-path: inset(10% 0 55% 0); transform: translate(3px, -2px); }
+  87% { clip-path: inset(65% 0 8% 0); transform: translate(-2px, 1px); }
+  89% { clip-path: inset(30% 0 40% 0); transform: translate(2px, 0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinReverse {
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes pulseCore {
+  0%, 100% { opacity: 0.38; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+
+@keyframes fadeSlide {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1100px) {
+  .hero-grid,
+  .risk-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar-inner,
+  .control-header,
+  .footer-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .signal {
+    min-width: 0;
+  }
+
+  .hero-panel,
+  .hero-side,
+  .control-panel,
+  .scan-overlay-box,
+  .summary-card,
+  .risk-panel,
+  .insight-card,
+  .modal__body {
+    padding: 22px;
+  }
+
+  .hero-metrics,
+  .status-band,
+  .summary-grid,
+  .modal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scan-actions {
+    align-items: stretch;
+  }
+
+  .scan-hint {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .cyber-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .spinner-wrap {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .risk-bar {
+    grid-template-columns: 70px 1fr 24px;
+  }
+
+  .instruction {
+    position: static;
+    margin-bottom: 12px;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 </style>
 </head>
 <body>
+<video class="bg-video" autoplay muted loop playsinline>
+  <source src="Cyberpunk Glitch Upgrade Modal _ CSS - Brave 2026-03-16 00-58-43.mp4" type="video/mp4">
+</video>
+<div class="bg-vignette"></div>
+<div class="bg-aura"></div>
+<div class="bg-noise"></div>
 
-<!-- Animated Background -->
-<div class="bg-grid"></div>
-<div class="bg-glow bg-glow-1"></div>
-<div class="bg-glow bg-glow-2"></div>
-<div class="bg-glow bg-glow-3"></div>
-
-<div class="app">
-
-  <!-- Navbar -->
-  <nav class="navbar">
-    <div class="container">
-      <a class="logo" href="#">
-        <div class="logo-icon">VS</div>
-        <div>
-          <div class="logo-text">Vulnerability Scan</div>
-          <div class="logo-sub">Cyber Recon Platform</div>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="#heroSection" aria-label="Go to hero section">
+        <div class="brand-mark">WVS</div>
+        <div class="brand-copy">
+          <div class="brand-title">Web Vulnerability Scanner</div>
+          <div class="brand-subtitle">Recon and analysis console</div>
         </div>
       </a>
-      <div class="nav-status">
-        <span class="status-dot"></span>
-        SYSTEMS ONLINE
+
+      <div class="topbar-right">
+        <div class="signal">
+          <span class="signal-label">Engine status</span>
+          <span class="signal-value">synchronized</span>
+        </div>
+
+        <button
+          type="button"
+          class="cyber-btn small"
+          aria-label="Open mission brief"
+          popovertarget="briefing"
+          popovertargetaction="show"
+        >
+          <span class="backdrop"></span>
+          <kbd>F1</kbd>
+          <span class="label">Project brief</span>
+          <span class="glitch" aria-hidden="true">
+            <kbd>F1</kbd>
+            <span class="letters">Project BRIEF</span>
+          </span>
+        </button>
       </div>
     </div>
-  </nav>
+  </header>
 
-  <!-- Hero -->
-  <section class="hero" id="heroSection">
+  <main>
+    <section class="container hero-grid" id="heroSection">
+      <div class="panel hero-panel">
+        <!-- <div class="micro-label">Authorized target analysis only</div> -->
+        <div class="hero-title-wrap">
+          <h1 class="hero-title" data-text="WEB VULNERABILITY SCANNER">
+            <span>Web Vulnerability</span>
+            <span>Scanner</span>
+          </h1>
+        </div>
+        <p class="hero-copy">
+          Launch comprehensive vulnerability assessments for one or multiple targets. This console coordinates recon and testing modules, then returns a consolidated <strong>analysis report</strong> with risk scoring, findings by category, and downloadable evidence.
+        </p>
+
+        <div class="hero-actions">
+          <button type="button" class="cyber-btn primary" onclick="scrollToScanner()" aria-label="Jump to target intake">
+            <span class="backdrop"></span>
+            <kbd>GO</kbd>
+            <span class="label">Open Target Intake</span>
+            <span class="glitch" aria-hidden="true">
+              <kbd>GO</kbd>
+              <span class="letters">OPEN TARGET INTAKE</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="cyber-btn alt"
+            aria-label="Open mission brief from hero"
+            popovertarget="briefing"
+            popovertargetaction="show"
+          >
+            <span class="backdrop"></span>
+            <kbd>SYS</kbd>
+            <span class="label">View Project Brief</span>
+            <span class="glitch" aria-hidden="true">
+              <kbd>SYS</kbd>
+              <span class="letters">VIEW PROJECT BRIEF</span>
+            </span>
+          </button>
+        </div>
+
+        <div class="hero-metrics">
+          <div class="metric-tile" data-code="scan scope">
+            <span class="metric-value">16+</span>
+            <span class="metric-label">Security modules</span>
+            <div class="metric-note">Recon, detection, and risk analysis</div>
+          </div>
+          <div class="metric-tile" data-code="target mode">
+            <span class="metric-value">Multi</span>
+            <span class="metric-label">Target support</span>
+            <div class="metric-note">Scan one or many URLs in one run</div>
+          </div>
+          <div class="metric-tile" data-code="reporting">
+            <span class="metric-value">PDF</span>
+            <span class="metric-label">Export ready</span>
+            <div class="metric-note">Shareable vulnerability report output</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel hero-side">
+        <div class="side-header">
+          <div class="micro-label">Project overview</div>
+          <h2>Scanner capability map</h2>
+          <p>Each scan run combines crawling, endpoint discovery, security checks, and AI-assisted prioritization into one report.</p>
+        </div>
+
+        <div class="reference-stack">
+          <div class="reference-item">
+            <div class="reference-label">Recon</div>
+            <div class="reference-value">Subdomains, open ports, technology fingerprinting, directories, parameters, APIs, and JS endpoints.</div>
+          </div>
+          <div class="reference-item">
+            <div class="reference-label">Detection</div>
+            <div class="reference-value">Header weaknesses, XSS and SQL checks, JWT analysis, secret exposure checks, and brute-force weak credential detection.</div>
+          </div>
+          <div class="reference-item">
+            <div class="reference-label">Analysis</div>
+            <div class="reference-value">AI-generated threat summary with overall risk level and actionable findings per scanned target.</div>
+          </div>
+          <div class="reference-item">
+            <div class="reference-label">Reporting</div>
+            <div class="reference-value">Interactive dashboard plus PDF export for documentation and remediation planning.</div>
+          </div>
+        </div>
+
+        <div class="status-band">
+          <div class="status-chip">
+            <strong>Target intake</strong>
+            <span>Single or multiple URL scanning</span>
+          </div>
+          <div class="status-chip">
+            <strong>Risk report</strong>
+            <span>Severity distribution and evidence</span>
+          </div>
+          <div class="status-chip">
+            <strong>PDF export</strong>
+            <span>Shareable vulnerability report</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="control-section">
+      <div class="container">
+        <div class="panel control-panel" id="scannerPanel">
+          <div class="instruction">Start here and feed one target per line</div>
+
+          <div class="control-header">
+            <div>
+              <!-- <div class="micro-label">Input deck</div> -->
+              <h2 class="control-title">Target Intake Matrix</h2>
+              <p class="control-copy">Drop one or more target URLs, run the full scan pipeline, and review findings in the analysis dashboard with downloadable PDF evidence.</p>
+            </div>
+
+            <div class="control-meta">
+              <span>Modules: headers, admin, xss, sql, ports, params, js, api, tech</span>
+              <span>Recon: subdomains, crawl, secrets, jwt, bruteforce, ai summary</span>
+              <span>Output: live dashboard plus PDF report</span>
+            </div>
+          </div>
+
+          <label class="sr-only" for="targets">Target URLs</label>
+          <textarea class="scan-textarea" id="targets" placeholder="https://example.com&#10;https://another-target.com" spellcheck="false"></textarea>
+
+          <div class="scan-actions">
+            <button type="button" class="cyber-btn primary" id="scanBtn" onclick="startScan(event)" aria-label="Initialize scan">
+              <span class="backdrop"></span>
+              <kbd>RUN</kbd>
+              <span class="label">Initialize Scan</span>
+              <span class="glitch" aria-hidden="true">
+                <kbd>RUN</kbd>
+                <span class="letters">INITIALIZE SCAN</span>
+              </span>
+            </button>
+
+            <button type="button" class="cyber-btn alt" id="reportBtn" onclick="downloadReport()" aria-label="Download report" style="display:none">
+              <span class="backdrop"></span>
+              <kbd>PDF</kbd>
+              <span class="label">Download Report</span>
+              <span class="glitch" aria-hidden="true">
+                <kbd>PDF</kbd>
+                <span class="letters">DOWNLOAD REPORT</span>
+              </span>
+            </button>
+
+            <button type="button" class="cyber-btn ghost" id="clearBtn" onclick="clearTargets()" aria-label="Clear targets">
+              <span class="backdrop"></span>
+              <kbd>CLR</kbd>
+              <span class="label">Clear Input</span>
+              <span class="glitch" aria-hidden="true">
+                <kbd>CLR</kbd>
+                <span class="letters">CLEAR INPUT</span>
+              </span>
+            </button>
+
+            <!-- <span class="scan-hint">Whole-site click audio is active after the first gesture</span> -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard container" id="dashboard">
+      <div id="dashboardContent"></div>
+    </section>
+  </main>
+
+  <footer class="footer-wrap">
     <div class="container">
-      <div class="hero-badge">Advanced Reconnaissance Engine</div>
-      <h1>Next-Gen Vulnerability<br>Intelligence Platform</h1>
-      <p>Multi-vector scanning with AI-powered analysis. Enumerate ports, discover directories, detect XSS/SQLi, map subdomains, and uncover secrets.</p>
-    </div>
-  </section>
-
-  <!-- Scan Panel -->
-  <section class="container">
-    <div class="scan-panel fade-up">
-      <label>Target URLs &mdash; one per line</label>
-      <div class="scan-input-wrap">
-        <textarea class="scan-textarea" id="targets" placeholder="https://example.com&#10;https://another-target.com" spellcheck="false"></textarea>
-      </div>
-      <div class="scan-actions">
-        <button type="button" class="btn btn-primary" id="scanBtn" onclick="startScan(event)">
-          <span class="icon-scan"></span> Initialize Scan
-        </button>
-        <button type="button" class="btn btn-report" id="reportBtn" onclick="downloadReport()" style="display:none">
-          ⬇ Download PDF Report
-        </button>
-        <span class="scan-hint">Supports multiple targets simultaneously</span>
+      <div class="panel footer-panel">
+        <div class="footer-copy">Web Vulnerability Scanner :: use only on systems you own or are authorized to assess</div>
+        <div class="footer-note">Recon, analysis, and report export in one dashboard</div>
       </div>
     </div>
-  </section>
+  </footer>
+</div>
 
-  <!-- Progress Overlay -->
-  <div class="scan-overlay" id="scanOverlay">
-    <div class="scan-progress-box">
-      <div class="scan-spinner">
-        <div class="scan-spinner-ring"></div>
-        <div class="scan-spinner-ring"></div>
-        <div class="scan-spinner-ring"></div>
+<div class="scan-overlay" id="scanOverlay">
+  <div class="panel scan-overlay-box">
+    <div class="micro-label">Engine execution</div>
+    <div class="spinner-wrap">
+      <div class="scan-spinner" aria-hidden="true">
+        <div class="scan-spinner-ring ring-a"></div>
+        <div class="scan-spinner-ring ring-b"></div>
+        <div class="scan-spinner-ring ring-c"></div>
         <div class="scan-spinner-core"></div>
       </div>
-      <div class="scan-status" id="scanStatus">Initializing Scan Engine...</div>
-      <div class="scan-substatus" id="scanSubstatus">Connecting to target</div>
-      <div class="scan-module-log" id="moduleLog"></div>
+      <div class="scan-status-block">
+        <div class="scan-status" id="scanStatus">Initializing scan engine</div>
+        <div class="scan-substatus" id="scanSubstatus">Connecting to target surface</div>
+      </div>
     </div>
+    <div class="scan-module-log" id="moduleLog"></div>
   </div>
+</div>
 
-  <!-- Dashboard -->
-  <section class="dashboard container" id="dashboard">
-    <div id="dashboardContent"></div>
+<div class="toast" id="toast"></div>
+
+<div class="modal" popover="auto" id="briefing">
+  <section class="panel modal__body">
+    <div class="micro-label">Project brief</div>
+    <h2>Web Vulnerability Scanner</h2>
+    <div class="modal-copy">
+      <p>This project scans authorized web targets and aggregates findings from multiple security modules into a unified analysis report.</p>
+      <p>Use the dashboard to review prioritized risks, inspect technical evidence, and download a PDF report for tracking and remediation.</p>
+    </div>
+
+    <div class="modal-grid">
+      <div class="modal-chip">
+        <strong>Input</strong>
+        <span>Submit one or more target URLs from the intake panel.</span>
+      </div>
+      <div class="modal-chip">
+        <strong>Scan modules</strong>
+        <span>Recon, vulnerability checks, token analysis, secret discovery, and brute-force evaluation.</span>
+      </div>
+      <div class="modal-chip">
+        <strong>Analysis report</strong>
+        <span>AI summary, severity signals, and categorized findings per target.</span>
+      </div>
+      <div class="modal-chip">
+        <strong>Best use</strong>
+        <span>Run only against authorized targets and review findings before acting on them.</span>
+      </div>
+    </div>
+
+    <div class="modal__actions">
+      <button type="button" class="cyber-btn ghost" popovertarget="briefing" popovertargetaction="close" aria-label="Close mission brief">
+        <span class="backdrop"></span>
+        <kbd>ESC</kbd>
+        <span class="label">Close Brief</span>
+        <span class="glitch" aria-hidden="true">
+          <kbd>ESC</kbd>
+          <span class="letters">CLOSE BRIEF</span>
+        </span>
+      </button>
+    </div>
   </section>
-
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
-
-  <!-- Footer -->
-  <footer class="footer">
-    VULNSCAN &bull; Cyber Reconnaissance Platform &bull; Use responsibly and only on authorized targets
-  </footer>
-
 </div>
 
 <script>
-/* ===== CONFIG ===== */
-// Change this to your Render backend URL after deployment
-// const API_BASE_URL = 'http://localhost:3000'; // Local dev 
-const API_BASE_URL = 'https://cybersecurity-major-project.onrender.com'; // After deploying to Render
-
-/* ===== STATE ===== */
+const API_BASE_URL = /localhost|127\.0\.0\.1/i.test(window.location.origin)
+  ? window.location.origin
+  : 'https://cybersecurity-major-project.onrender.com';
 
 let scanResults = null;
 let activeTarget = 0;
+let audioCtx = null;
+let lastClickTone = 0;
 
-// Global error handler – prevents silent crashes
+initGlobalClickSound();
+initPageEffects();
+
+requestAnimationFrame(function() {
+  document.documentElement.classList.add('is-ready');
+});
+
 window.onerror = function(msg, src, line, col, err) {
   console.error('GLOBAL ERROR:', msg, 'at', src, line, col, err);
   showToast('JS Error: ' + msg);
+  playUiSound('error');
   return true;
 };
 
-/* ===== SCAN ===== */
-async function startScan(e) {
-  if (e && typeof e.preventDefault === 'function') e.preventDefault();
-  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+function initPageEffects() {
+  const popover = document.getElementById('briefing');
+  if (!popover) return;
+
+  popover.addEventListener('toggle', function(event) {
+    playUiSound(event.newState === 'open' ? 'open' : 'soft');
+  });
+}
+
+function scrollToScanner() {
+  const scanner = document.getElementById('scannerPanel');
+  if (!scanner) return;
+  scanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function clearTargets() {
+  const targetInput = document.getElementById('targets');
+  targetInput.value = '';
+  targetInput.focus();
+  playUiSound('soft');
+}
+
+function initGlobalClickSound() {
+  document.addEventListener('pointerdown', handleGlobalClickTone, { capture: true });
+}
+
+function handleGlobalClickTone(event) {
+  if (event.button !== 0) return;
+
+  const target = event.target instanceof Element ? event.target : null;
+  if (!target) return;
+
+  const now = performance.now();
+  if (now - lastClickTone < 24) return;
+  lastClickTone = now;
+
+  const interactive = target.closest('button, a, input, textarea, select, [popovertarget], .target-tab, .result-card-header, [role="button"]');
+  const primary = target.closest('.cyber-btn.primary, #scanBtn');
+  const alternate = target.closest('.cyber-btn.alt, #reportBtn');
+  const disclosure = target.closest('.result-card-header, .target-tab');
+
+  if (primary) {
+    playUiSound('primary');
+    return;
+  }
+
+  if (alternate) {
+    playUiSound('alt');
+    return;
+  }
+
+  if (disclosure) {
+    playUiSound('soft');
+    return;
+  }
+
+  playUiSound(interactive ? 'click' : 'ambient');
+}
+
+function playUiSound(kind) {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+
+  if (!audioCtx) {
+    audioCtx = new Ctx();
+  }
+
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(function() {});
+  }
+
+  const presets = {
+    ambient: { start: 880, end: 640, gain: 0.022, duration: 0.035, noise: 0.01, type: 'triangle' },
+    click: { start: 1460, end: 920, gain: 0.05, duration: 0.052, noise: 0.018, type: 'square' },
+    soft: { start: 1180, end: 760, gain: 0.04, duration: 0.05, noise: 0.012, type: 'triangle' },
+    primary: { start: 1840, end: 980, gain: 0.07, duration: 0.065, noise: 0.02, type: 'sawtooth' },
+    alt: { start: 1520, end: 860, gain: 0.06, duration: 0.06, noise: 0.017, type: 'square' },
+    open: { start: 960, end: 1260, gain: 0.05, duration: 0.08, noise: 0.008, type: 'triangle' },
+    success: { start: 1120, end: 1880, gain: 0.06, duration: 0.1, noise: 0.008, type: 'triangle' },
+    error: { start: 520, end: 240, gain: 0.065, duration: 0.12, noise: 0.016, type: 'square' }
+  };
+
+  const config = presets[kind] || presets.click;
+  const t0 = audioCtx.currentTime;
+
+  const oscillator = audioCtx.createOscillator();
+  oscillator.type = config.type;
+  oscillator.frequency.setValueAtTime(config.start, t0);
+  oscillator.frequency.exponentialRampToValueAtTime(Math.max(config.end, 80), t0 + config.duration);
+
+  const gainNode = audioCtx.createGain();
+  gainNode.gain.setValueAtTime(0.0001, t0);
+  gainNode.gain.exponentialRampToValueAtTime(config.gain, t0 + 0.004);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, t0 + config.duration);
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.setValueAtTime(kind === 'error' ? 240 : 700, t0);
+
+  oscillator.connect(filter);
+  filter.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  oscillator.start(t0);
+  oscillator.stop(t0 + config.duration + 0.01);
+
+  if (config.noise > 0) {
+    const noiseNode = audioCtx.createBufferSource();
+    const noiseBuffer = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * config.duration), audioCtx.sampleRate);
+    const channel = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < channel.length; i++) {
+      channel[i] = (Math.random() * 2 - 1) * config.noise;
+    }
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.0001, t0);
+    noiseGain.gain.exponentialRampToValueAtTime(config.gain * 0.6, t0 + 0.003);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(0.02, config.duration * 0.7));
+    noiseNode.buffer = noiseBuffer;
+    noiseNode.connect(filter);
+    noiseNode.connect(noiseGain);
+    noiseGain.connect(audioCtx.destination);
+    noiseNode.start(t0);
+    noiseNode.stop(t0 + config.duration);
+  }
+}
+
+async function startScan(event) {
+  if (event && typeof event.preventDefault === 'function') event.preventDefault();
+  if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
 
   const text = document.getElementById('targets').value.trim();
-  if (!text) { showToast('Enter at least one target URL'); return; }
+  if (!text) {
+    showToast('Enter at least one target URL');
+    playUiSound('error');
+    return;
+  }
 
-  const targets = text.split('\n').map(t => t.trim()).filter(Boolean);
+  const targets = text.split('\n').map(function(item) {
+    return item.trim();
+  }).filter(Boolean);
+
   const btn = document.getElementById('scanBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="icon-scan"></span> Scanning...';
+  btn.dataset.pending = 'true';
+  setButtonLabel(btn, 'RUN', 'Scanning...');
 
   showOverlay(targets);
+  playUiSound('primary');
 
-  // 3-minute hard timeout so fetch never hangs forever
   const controller = new AbortController();
-  const fetchTimeout = setTimeout(() => controller.abort(), 180000);
+  const fetchTimeout = setTimeout(function() {
+    controller.abort();
+  }, 180000);
 
   try {
-    const res = await fetch(`${API_BASE_URL}/scan`, {
+    const res = await fetch(API_BASE_URL + '/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targets }),
+      body: JSON.stringify({ targets: targets }),
       signal: controller.signal
     });
 
     clearTimeout(fetchTimeout);
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: 'Scan failed' }));
+      const err = await res.json().catch(function() {
+        return { error: 'Scan failed' };
+      });
       throw new Error(err.error || err.details || 'Scan failed');
     }
 
     scanResults = await res.json();
-    console.log('Scan results received:', scanResults);
     hideOverlay();
+    playUiSound('success');
 
-    // Make dashboard visible BEFORE rendering so partial results show on error
     document.getElementById('dashboard').classList.add('active');
     document.getElementById('reportBtn').style.display = 'inline-flex';
 
@@ -590,14 +2348,15 @@ async function startScan(e) {
       renderDashboard(scanResults);
     } catch (renderErr) {
       console.error('RENDER ERROR:', renderErr);
-      document.getElementById('dashboardContent').innerHTML =
-        '<p style="color:var(--red);padding:20px;">Error rendering results. Check browser console (F12) for details. Raw data received successfully.</p>';
+      document.getElementById('dashboardContent').innerHTML = '<div class="panel insight-card"><div class="micro-label">Render fault</div><p style="margin:0;color:var(--danger)">Raw data was received, but the dashboard renderer failed. Check the browser console for details.</p></div>';
+      playUiSound('error');
     }
 
-    document.getElementById('dashboard').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('dashboard').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
     clearTimeout(fetchTimeout);
     hideOverlay();
+    playUiSound('error');
     if (err.name === 'AbortError') {
       showToast('Scan timed out. Target may be unreachable.');
     } else {
@@ -605,50 +2364,66 @@ async function startScan(e) {
     }
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="icon-scan"></span> Initialize Scan';
+    delete btn.dataset.pending;
+    setButtonLabel(btn, 'RUN', 'Initialize Scan');
   }
 }
 
-/* ===== PROGRESS OVERLAY ===== */
+function setButtonLabel(button, kbdText, labelText) {
+  const kbd = button.querySelector('kbd');
+  const label = button.querySelector('.label');
+  const glitchKbd = button.querySelector('.glitch kbd');
+  const glitchLetters = button.querySelector('.glitch .letters');
+
+  if (kbd) kbd.textContent = kbdText;
+  if (label) label.textContent = labelText;
+  if (glitchKbd) glitchKbd.textContent = kbdText;
+  if (glitchLetters) glitchLetters.textContent = labelText.toUpperCase();
+}
+
 function showOverlay(targets) {
   const overlay = document.getElementById('scanOverlay');
   overlay.classList.add('active');
 
   const modules = [
-    'Header Analysis', 'Admin Panel Discovery', 'XSS Probe',
-    'Directory Enumeration', 'SQL Injection Test', 'Port Scanning',
-    'Parameter Discovery', 'JS Endpoint Extraction', 'API Enumeration',
-    'Technology Detection', 'Subdomain Recon', 'Secret Analysis',
-    'Web Crawling', 'Brute Force Testing', 'JWT Token Analysis',
-    'AI Risk Assessment'
+    'Header analysis', 'Admin panel discovery', 'XSS probe',
+    'Directory enumeration', 'SQL injection test', 'Port scanning',
+    'Parameter discovery', 'JS endpoint extraction', 'API enumeration',
+    'Technology detection', 'Subdomain recon', 'Secret analysis',
+    'Web crawling', 'Brute force testing', 'JWT token analysis',
+    'AI risk assessment'
   ];
 
   const log = document.getElementById('moduleLog');
   log.innerHTML = '';
-  let i = 0;
+  let index = 0;
 
-  document.getElementById('scanStatus').textContent = `Scanning ${targets.length} target${targets.length > 1 ? 's' : ''}...`;
+  document.getElementById('scanStatus').textContent = 'Scanning ' + targets.length + ' target' + (targets.length > 1 ? 's' : '');
 
-  const interval = setInterval(() => {
-    if (i < modules.length) {
-      document.getElementById('scanSubstatus').textContent = modules[i];
+  const interval = setInterval(function() {
+    if (index < modules.length) {
+      document.getElementById('scanSubstatus').textContent = modules[index];
+
       const line = document.createElement('div');
       line.className = 'log-line';
-      line.innerHTML = `<span class="dot active"></span> ${modules[i]}`;
+      line.innerHTML = '<span class="dot active"></span>' + modules[index];
       log.appendChild(line);
       log.scrollTop = log.scrollHeight;
 
-      // Mark previous done
       const dots = log.querySelectorAll('.dot.active');
-      if (dots.length > 1) dots[dots.length - 2].className = 'dot done';
-      i++;
+      if (dots.length > 1) {
+        dots[dots.length - 2].className = 'dot done';
+      }
+
+      index += 1;
     } else {
-      // All modules logged, mark last one done and show "Finalizing"
-      const dots = log.querySelectorAll('.dot.active');
-      dots.forEach(d => d.className = 'dot done');
-      document.getElementById('scanSubstatus').textContent = 'Finalizing results...';
+      const activeDots = log.querySelectorAll('.dot.active');
+      activeDots.forEach(function(dot) {
+        dot.className = 'dot done';
+      });
+      document.getElementById('scanSubstatus').textContent = 'Finalizing results';
     }
-  }, 1200);
+  }, 1100);
 
   overlay._interval = interval;
 }
@@ -659,295 +2434,329 @@ function hideOverlay() {
   overlay.classList.remove('active');
 }
 
-/* ===== RENDER DASHBOARD ===== */
 function renderDashboard(data) {
   const wrap = document.getElementById('dashboardContent');
+  const dashboard = document.getElementById('dashboard');
   activeTarget = 0;
 
-  // Compute summary
   const summary = computeSummary(data);
-
-  let html = '';
-
-  // Summary strip
-  html += `<div class="summary-strip fade-up">
-    <div class="summary-card risk-critical">
-      <div class="sc-label">Critical Findings</div>
-      <div class="sc-value critical">${summary.critical}</div>
-      <div class="sc-sub">XSS, SQLi, Secrets, JWT, Creds</div>
-    </div>
-    <div class="summary-card risk-high">
-      <div class="sc-label">High Risk</div>
-      <div class="sc-value high">${summary.high}</div>
-      <div class="sc-sub">Headers, Admin panels, JWT</div>
-    </div>
-    <div class="summary-card risk-medium">
-      <div class="sc-label">Medium Risk</div>
-      <div class="sc-value medium">${summary.medium}</div>
-      <div class="sc-sub">Ports, Params, Login forms</div>
-    </div>
-    <div class="summary-card risk-info">
-      <div class="sc-label">Informational</div>
-      <div class="sc-value info">${summary.info}</div>
-      <div class="sc-sub">Pages, Endpoints, Tech</div>
-    </div>
-    <div class="summary-card risk-low">
-      <div class="sc-label">Targets Scanned</div>
-      <div class="sc-value low">${data.length}</div>
-      <div class="sc-sub">Completed successfully</div>
-    </div>
-  </div>`;
-
-  // Risk Meter (aligned with AI "Overall Risk Level" output)
   const aiRisk = extractOverallRisk(data);
   const riskScore = aiRisk.score;
   const riskLevel = aiRisk.level;
-  const riskColor = riskLevel === 'CRITICAL' ? 'var(--red)'
-    : riskLevel === 'HIGH' ? 'var(--orange)'
-    : riskLevel === 'MEDIUM' ? 'var(--yellow)'
-    : 'var(--green)';
-  const circumference = 2 * Math.PI * 42;
+  const riskColor = riskLevel === 'CRITICAL'
+    ? 'var(--danger)'
+    : riskLevel === 'HIGH'
+      ? 'var(--warning)'
+      : riskLevel === 'MEDIUM'
+        ? '#ffe37f'
+        : 'var(--ok)';
+
+  const circumference = 2 * Math.PI * 58;
   const offset = circumference - (riskScore / 100) * circumference;
 
-  html += `<div class="risk-meter fade-up stagger-1">
-    <div class="risk-meter-visual">
-      <div class="risk-ring">
-        <svg viewBox="0 0 100 100">
-          <circle class="bg" cx="50" cy="50" r="42"/>
-          <circle class="fg" cx="50" cy="50" r="42"
-            stroke-dasharray="${circumference}"
-            stroke-dashoffset="${offset}"
-            style="stroke:${riskColor}"/>
-        </svg>
-        <div class="score-text" style="color:${riskColor}">${riskScore}</div>
-      </div>
-      <div style="font-size:12px;color:var(--text-dim)">RISK SCORE</div>
-      <div style="font-size:11px;color:${riskColor};font-weight:700;letter-spacing:0.7px">${riskLevel}</div>
-    </div>
-    <div class="risk-meter-details">
-      <div class="risk-meter-title">Vulnerability Distribution</div>
-      <div class="risk-bars">
-        <div class="risk-bar">
-          <span class="risk-bar-label" style="color:var(--red)">Critical</span>
-          <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${pct(summary.critical, summary.total)};background:var(--red)"></div></div>
-          <span class="risk-bar-count" style="color:var(--red)">${summary.critical}</span>
-        </div>
-        <div class="risk-bar">
-          <span class="risk-bar-label" style="color:var(--orange)">High</span>
-          <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${pct(summary.high, summary.total)};background:var(--orange)"></div></div>
-          <span class="risk-bar-count" style="color:var(--orange)">${summary.high}</span>
-        </div>
-        <div class="risk-bar">
-          <span class="risk-bar-label" style="color:var(--yellow)">Medium</span>
-          <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${pct(summary.medium, summary.total)};background:var(--yellow)"></div></div>
-          <span class="risk-bar-count" style="color:var(--yellow)">${summary.medium}</span>
-        </div>
-        <div class="risk-bar">
-          <span class="risk-bar-label" style="color:var(--cyan)">Info</span>
-          <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${pct(summary.info, summary.total)};background:var(--cyan)"></div></div>
-          <span class="risk-bar-count" style="color:var(--cyan)">${summary.info}</span>
-        </div>
-      </div>
-    </div>
-  </div>`;
+  let html = '';
+  html += '<div class="summary-grid">';
+  html += buildSummaryCard('Critical findings', summary.critical, 'XSS, SQLi, secrets, weak credentials', 'risk-critical');
+  html += buildSummaryCard('High risk', summary.high, 'Headers, admin panels, token warnings', 'risk-high');
+  html += buildSummaryCard('Medium risk', summary.medium, 'Ports, directories, parameters', 'risk-medium');
+  html += buildSummaryCard('Informational', summary.info, 'Pages, endpoints, technology map', 'risk-info');
+  html += buildSummaryCard('Targets scanned', data.length, 'Successful response objects returned', 'risk-low');
+  html += '</div>';
 
-  // Target tabs (if multiple)
+  html += '<div class="risk-layout">';
+  html += '<div class="panel risk-panel">';
+  html += '<div class="micro-label">Risk synthesis</div>';
+  html += '<div class="risk-head">';
+  html += '<h2 class="section-title">Overall risk signal</h2>';
+  html += '<div class="risk-score" style="color:' + riskColor + '">' + escHtml(riskLevel) + '</div>';
+  html += '</div>';
+  html += '<div class="risk-ring">';
+  html += '<svg viewBox="0 0 140 140">';
+  html += '<circle class="bg" cx="70" cy="70" r="58"></circle>';
+  html += '<circle class="fg" cx="70" cy="70" r="58" stroke="' + riskColor + '" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + offset + '"></circle>';
+  html += '</svg>';
+  html += '<div class="risk-ring-text" style="color:' + riskColor + '">' + riskScore + '</div>';
+  html += '</div>';
+  html += '<div class="risk-meta">Highest AI-derived score across all scanned targets</div>';
+  html += '</div>';
+
+  html += '<div class="panel insight-card">';
+  html += '<div class="micro-label">Distribution</div>';
+  html += '<h2 class="section-title">Finding spread</h2>';
+  html += '<div class="risk-bars">';
+  html += buildRiskBar('Critical', summary.critical, summary.total, 'var(--danger)');
+  html += buildRiskBar('High', summary.high, summary.total, 'var(--warning)');
+  html += buildRiskBar('Medium', summary.medium, summary.total, '#ffe37f');
+  html += buildRiskBar('Info', summary.info, summary.total, 'var(--accent)');
+  html += '</div>';
+  html += '</div>';
+  html += '</div>';
+
   if (data.length > 1) {
-    html += '<div class="target-tabs fade-up stagger-2">';
-    data.forEach((site, i) => {
-      const label = escHtml(site.target.replace(/^https?:\/\//, ''));
-      html += `<div class="target-tab${i === 0 ? ' active' : ''}" onclick="switchTarget(${i}, this)">${label}</div>`;
+    html += '<div class="target-tabs">';
+    data.forEach(function(site, index) {
+      const label = escHtml(String(site.target || '').replace(/^https?:\/\//, ''));
+      html += '<div class="target-tab' + (index === 0 ? ' active' : '') + '" onclick="switchTarget(' + index + ', this)">' + label + '</div>';
     });
     html += '</div>';
   }
 
-  // Per-target results
-  data.forEach((site, i) => {
-    html += `<div class="target-results fade-up stagger-3" id="target-${i}" style="${i > 0 ? 'display:none' : ''}">`;
+  data.forEach(function(site, index) {
+    html += '<div class="target-results" id="target-' + index + '" style="' + (index > 0 ? 'display:none' : '') + '">';
 
-    // AI Analysis
-    const ai = site.aiAnalysis || [];
+    const ai = Array.isArray(site.aiAnalysis) ? site.aiAnalysis : [];
     if (ai.length > 0) {
-      html += `<div class="ai-card">
-        <div class="ai-card-title"><span class="icon-ai"></span> <span>AI Threat Assessment</span></div>
-        <div class="ai-insights">`;
-      ai.forEach(item => {
-        const cls = item.startsWith('CRITICAL:') || item.toLowerCase().includes('critical') || item.toLowerCase().includes('ssh') || item.toLowerCase().includes('brute') ? 'critical'
-          : item.toLowerCase().includes('missing') || item.toLowerCase().includes('exposed') || item.toLowerCase().includes('admin') ? 'warning' : 'info';
-        const icon = cls === 'critical' ? '⚠' : cls === 'warning' ? '⚡' : 'ℹ';
-        html += `<div class="ai-insight ${cls}">
-          <span class="ai-insight-icon">${icon}</span>
-          <span>${escHtml(item)}</span>
-        </div>`;
+      html += '<div class="panel insight-card" style="margin-bottom:18px">';
+    //   html += '<div class="micro-label">AI synthesis</div>';
+      html += '<h2 class="section-title">Threat assessment</h2>';
+      html += '<div class="insight-list">';
+      ai.forEach(function(item) {
+        const type = classifyInsight(item);
+        html += '<div class="ai-insight ' + type + '"><span class="ai-insight-label">' + insightLabel(type) + '</span>' + escHtml(item) + '</div>';
       });
-      html += '</div></div>';
+      html += '</div>';
+      html += '</div>';
     }
 
-    // Results grid
     html += '<div class="results-grid">';
-
-    // Security Headers
-    const headerVulns = site.headers?.vulnerabilities || [];
-    html += buildCard('icon-header', 'Security Headers', headerVulns, 'warn', v =>
-      `<div class="headers-vuln"><span style="color:var(--yellow)">⚠</span> ${escHtml(v)}</div>`
-    );
-
-    // XSS
-    const xssResults = (site.xss && site.xss.results) ? site.xss.results : (typeof site.xss === 'string' && site.xss ? [site.xss] : []);
-    html += buildCard('icon-xss', 'XSS Detection', xssResults, isVuln(site.xss) ? 'warn' : 'safe', v => {
-      if (v.type === 'waf_detected') return `<div class="result-item info">🛡️ WAF Detected: ${escHtml(v.server || 'Unknown')}</div>`;
-      return `<div class="result-item vuln">Param: <strong>${escHtml(v.parameter || '?')}</strong> | Payload: ${escHtml(v.payload || '')} | Type: ${escHtml(v.type || '')}</div>`;
+    html += buildCard('HDR', 'Security Headers', site.headers && site.headers.vulnerabilities ? site.headers.vulnerabilities : [], 'warn', function(item) {
+      return '<div class="headers-vuln">' + escHtml(item) + '</div>';
     });
 
-    // SQL Injection
-    const sqlResults = (site.sql && site.sql.results) ? site.sql.results : (typeof site.sql === 'string' && site.sql ? [site.sql] : []);
-    html += buildCard('icon-sql', 'SQL Injection', sqlResults, isVuln(site.sql) ? 'warn' : 'safe', v => {
-      if (v.type === 'waf_detected') return `<div class="result-item info">🛡️ WAF Detected: ${escHtml(v.server || 'Unknown')}</div>`;
-      if (typeof v === 'string') return `<div class="result-item vuln">${escHtml(v)}</div>`;
-      return `<div class="result-item vuln">Param: <strong>${escHtml(v.parameter || '?')}</strong> | Payload: ${escHtml(v.payload || '')} | Type: ${escHtml(v.type || '')}</div>`;
-    });
-
-    // Open Ports
-    html += buildCard('icon-port', 'Open Ports', site.ports || site.openPorts, 'info', v =>
-      `<div class="result-item info">Port ${escHtml(String(v))} ${portService(v)}</div>`
-    );
-
-    // Admin Panels
-    html += buildCard('icon-admin', 'Admin Panels', site.adminPanels, 'warn', v =>
-      `<div class="result-item warn">${escHtml(v)}</div>`
-    );
-
-    // Directories
-    html += buildCard('icon-dir', 'Exposed Directories', site.directories, 'warn', v => {
-      if (typeof v === 'object' && v.url) return `<div class="result-item warn">${escHtml(v.url)} <span style="color:var(--text-dim)">(${v.status} - ${escHtml(v.type || '')})</span></div>`;
-      return `<div class="result-item warn">${escHtml(String(v))}</div>`;
-    });
-
-    // Subdomains
-    html += buildCard('icon-sub', 'Subdomains', site.subdomains, 'info', v => {
-      if (typeof v === 'object' && v.url) {
-        let text = v.url;
-        if (v.title) text += ` — ${v.title}`;
-        if (v.server) text += ` [${v.server}]`;
-        if (v.waf) text += ` (WAF: ${v.waf})`;
-        return `<div class="result-item info">${escHtml(text)}</div>`;
+    const xssResults = site.xss && site.xss.results ? site.xss.results : (typeof site.xss === 'string' && site.xss ? [site.xss] : []);
+    html += buildCard('XSS', 'XSS Detection', xssResults, isVuln(site.xss, 'xss') ? 'warn' : 'safe', function(item) {
+      if (item && item.type === 'waf_detected') {
+        return '<div class="result-item info">WAF detected: ' + escHtml(item.server || 'Unknown') + '</div>';
       }
-      return `<div class="result-item info">${escHtml(String(v))}</div>`;
+      if (item && item.type === 'csp_detected') {
+        return '<div class="result-item info">CSP detected: policy present</div>';
+      }
+      if (typeof item === 'string') {
+        return '<div class="result-item ' + classifyTextSeverity(item) + '">' + escHtml(item) + '</div>';
+      }
+      const cls = findingSeverity(item, 'xss') === 'vuln' ? 'vuln' : 'info';
+      return '<div class="result-item ' + cls + '">Param: ' + escHtml(item.parameter || '?') + ' | Payload: ' + escHtml(item.payload || '') + ' | Type: ' + escHtml(item.type || '') + '</div>';
     });
 
-    // Technologies
-    const techList = Array.isArray(site.technologies) ? site.technologies
-      : (site.technologies && Array.isArray(site.technologies.technologies)) ? site.technologies.technologies
-      : [];
-    html += buildCard('icon-tech', 'Technologies', techList, 'info', v =>
-      `<div class="result-item info">${escHtml(typeof v === 'object' ? (v.name || JSON.stringify(v)) : String(v))}</div>`
-    );
-
-    // API Endpoints
-    html += buildCard('icon-api', 'API Endpoints', site.apis, 'info', v =>
-      `<div class="result-item info">${escHtml(v)}</div>`
-    );
-
-    // Parameters
-    html += buildCard('icon-param', 'Discovered Parameters', site.parameters, 'info', v => {
-      if (typeof v === 'object' && v.param) return `<div class="result-item info"><strong>${escHtml(v.param)}</strong>: ${escHtml(v.payload || '')} <span style="color:var(--text-dim)">(${escHtml(v.type || '')})</span></div>`;
-      return `<div class="result-item info">${escHtml(String(v))}</div>`;
+    const sqlResults = site.sql && site.sql.results ? site.sql.results : (typeof site.sql === 'string' && site.sql ? [site.sql] : []);
+    html += buildCard('SQL', 'SQL Injection', sqlResults, isVuln(site.sql, 'sql') ? 'warn' : 'safe', function(item) {
+      if (item && item.type === 'waf_detected') {
+        return '<div class="result-item info">WAF detected: ' + escHtml(item.server || 'Unknown') + '</div>';
+      }
+      if (typeof item === 'string') {
+        return '<div class="result-item ' + classifyTextSeverity(item) + '">' + escHtml(item) + '</div>';
+      }
+      const cls = findingSeverity(item, 'sql') === 'vuln' ? 'vuln' : 'info';
+      return '<div class="result-item ' + cls + '">Param: ' + escHtml(item.parameter || '?') + ' | Payload: ' + escHtml(item.payload || '') + ' | Type: ' + escHtml(item.type || '') + '</div>';
     });
 
-    // JS Endpoints
-    html += buildCard('icon-js', 'JS Endpoints', site.jsEndpoints, 'info', v =>
-      `<div class="result-item info">${escHtml(v)}</div>`
-    );
+    html += buildCard('PRT', 'Open Ports', site.ports || site.openPorts || [], 'info', function(item) {
+      return '<div class="result-item info">Port ' + escHtml(String(item)) + portService(item) + '</div>';
+    });
 
-    // JS Secrets
-    html += buildCard('icon-secret', 'Secrets Found', site.jsSecrets, 'warn', v =>
-      `<div class="result-item vuln">🔐 ${escHtml(v)}</div>`
-    );
+    html += buildCard('ADM', 'Admin Panels', site.adminPanels || [], 'warn', function(item) {
+      return '<div class="result-item warn">' + escHtml(String(item)) + '</div>';
+    });
 
-    // JWT Analysis
+    html += buildCard('DIR', 'Exposed Directories', site.directories || [], 'warn', function(item) {
+      if (item && typeof item === 'object' && item.url) {
+        return '<div class="result-item warn">' + escHtml(item.url) + ' <span style="color:var(--text-2)">(' + escHtml(String(item.status || '')) + ' - ' + escHtml(item.type || '') + ')</span></div>';
+      }
+      return '<div class="result-item warn">' + escHtml(String(item)) + '</div>';
+    });
+
+    html += buildCard('SUB', 'Subdomains', site.subdomains || [], 'info', function(item) {
+      if (item && typeof item === 'object' && item.url) {
+        let text = item.url;
+        if (item.title) text += ' - ' + item.title;
+        if (item.server) text += ' [' + item.server + ']';
+        if (item.waf) text += ' (WAF: ' + item.waf + ')';
+        return '<div class="result-item info">' + escHtml(text) + '</div>';
+      }
+      return '<div class="result-item info">' + escHtml(String(item)) + '</div>';
+    });
+
+    const techList = Array.isArray(site.technologies)
+      ? site.technologies
+      : (site.technologies && Array.isArray(site.technologies.technologies) ? site.technologies.technologies : []);
+    html += buildCard('TEC', 'Technologies', techList, 'info', function(item) {
+      return '<div class="result-item info">' + escHtml(typeof item === 'object' ? (item.name || JSON.stringify(item)) : String(item)) + '</div>';
+    });
+
+    html += buildCard('API', 'API Endpoints', site.apis || [], 'info', function(item) {
+      return '<div class="result-item info">' + escHtml(String(item)) + '</div>';
+    });
+
+    html += buildCard('PAR', 'Discovered Parameters', site.parameters || [], 'info', function(item) {
+      if (item && typeof item === 'object' && item.param) {
+        return '<div class="result-item info">' + escHtml(item.param) + ': ' + escHtml(item.payload || '') + ' <span style="color:var(--text-2)">(' + escHtml(item.type || '') + ')</span></div>';
+      }
+      return '<div class="result-item info">' + escHtml(String(item)) + '</div>';
+    });
+
+    html += buildCard('JS', 'JS Endpoints', site.jsEndpoints || [], 'info', function(item) {
+      return '<div class="result-item info">' + escHtml(String(item)) + '</div>';
+    });
+
+    html += buildCard('SEC', 'Secrets Found', site.jsSecrets || [], 'warn', function(item) {
+      return '<div class="result-item vuln">' + escHtml(String(item)) + '</div>';
+    });
+
     const jwt = site.jwtAnalysis;
     if (jwt) {
       const jwtItems = [];
       if (jwt.valid) {
-        jwtItems.push(`Algorithm: ${jwt.algorithm || 'N/A'}`);
-        jwtItems.push(`Tokens Found: ${jwt.tokensFound || 0}`);
-        (jwt.vulnerabilities || []).forEach(v => jwtItems.push(`VULN: ${v}`));
-        (jwt.warnings || []).forEach(w => jwtItems.push(`WARN: ${w}`));
+        jwtItems.push('Algorithm: ' + (jwt.algorithm || 'N/A'));
+        jwtItems.push('Tokens found: ' + (jwt.tokensFound || 0));
+        (jwt.vulnerabilities || []).forEach(function(item) {
+          jwtItems.push('VULN: ' + item);
+        });
+        (jwt.warnings || []).forEach(function(item) {
+          jwtItems.push('WARN: ' + item);
+        });
         if (jwt.attackSimulation && jwt.attackSimulation.type) {
-          jwtItems.push(`Attack: ${jwt.attackSimulation.type} — ${jwt.attackSimulation.description || ''}`);
+          jwtItems.push('Attack: ' + jwt.attackSimulation.type + ' - ' + (jwt.attackSimulation.description || ''));
         }
       } else {
         jwtItems.push(jwt.message || jwt.error || 'No JWT tokens detected');
       }
-      const jwtSeverity = (jwt.vulnerabilities || []).length > 0 ? 'warn' : 'info';
-      html += buildCard('icon-jwt', 'JWT Analysis', jwtItems, jwtSeverity, v => {
-        const cls = v.startsWith('VULN:') ? 'vuln' : v.startsWith('WARN:') ? 'warn' : 'info';
-        return `<div class="result-item ${cls}">${escHtml(v)}</div>`;
+
+      html += buildCard('JWT', 'JWT Analysis', jwtItems, (jwt.vulnerabilities || []).length > 0 ? 'warn' : 'info', function(item) {
+        const cls = item.indexOf('VULN:') === 0 ? 'vuln' : item.indexOf('WARN:') === 0 ? 'warn' : 'info';
+        return '<div class="result-item ' + cls + '">' + escHtml(item) + '</div>';
       });
     }
 
-    // Bruteforce Results
     const brute = site.bruteforce;
     if (brute) {
       const bruteItems = [];
-      bruteItems.push(`Summary: ${brute.summary || 'N/A'}`);
-      bruteItems.push(`Login Forms Found: ${(brute.loginFormsFound || []).length}`);
-      bruteItems.push(`Endpoints Tested: ${(brute.testedEndpoints || []).length}`);
-      bruteItems.push(`Total Attempts: ${brute.attempts || 0}`);
-      (brute.weakCredentials || []).forEach(c =>
-        bruteItems.push(`WEAK: ${c.username}:${c.password} @ ${c.endpoint}`)
-      );
-      const bruteSeverity = (brute.weakCredentials || []).length > 0 ? 'warn' : 'info';
-      html += buildCard('icon-brute', 'Brute Force Analysis', bruteItems, bruteSeverity, v => {
-        const cls = v.startsWith('WEAK:') ? 'vuln' : 'info';
-        return `<div class="result-item ${cls}">${escHtml(v)}</div>`;
+      bruteItems.push('Summary: ' + (brute.summary || 'N/A'));
+      bruteItems.push('Login forms found: ' + ((brute.loginFormsFound || []).length));
+      bruteItems.push('Endpoints tested: ' + ((brute.testedEndpoints || []).length));
+      bruteItems.push('Total attempts: ' + (brute.attempts || 0));
+      (brute.weakCredentials || []).forEach(function(item) {
+        bruteItems.push('WEAK: ' + item.username + ':' + item.password + ' @ ' + item.endpoint);
+      });
+
+      html += buildCard('BRT', 'Brute Force Analysis', bruteItems, (brute.weakCredentials || []).length > 0 ? 'warn' : 'info', function(item) {
+        return '<div class="result-item ' + (item.indexOf('WEAK:') === 0 ? 'vuln' : 'info') + '">' + escHtml(item) + '</div>';
       });
     }
 
-    // Crawled Pages
-    html += buildCard('icon-page', 'Crawled Pages', site.pages, 'info', v =>
-      `<div class="result-item info">${escHtml(v)}</div>`
-    );
-
-    html += '</div>'; // results-grid
-    html += '</div>'; // target-results
+    html += buildCard('CRL', 'Crawled Pages', site.pages || [], 'info', function(item) {
+      return '<div class="result-item info">' + escHtml(String(item)) + '</div>';
+    });
+    html += '</div>';
+    html += '</div>';
   });
 
   wrap.innerHTML = html;
+  armDashboardMotion(dashboard);
 }
 
-/* ===== HELPERS ===== */
+function armDashboardMotion(dashboard) {
+  if (!dashboard) return;
+
+  dashboard.classList.remove('is-animated');
+
+  const nodes = dashboard.querySelectorAll('.summary-card, .insight-card, .target-tab, .result-card');
+  nodes.forEach(function(node, index) {
+    node.style.setProperty('--delay', Math.min(index * 55, 900) + 'ms');
+  });
+
+  requestAnimationFrame(function() {
+    dashboard.classList.add('is-animated');
+  });
+}
+
+function buildSummaryCard(label, value, sub, variant) {
+  return '<div class="panel summary-card ' + variant + '">' +
+    '<div class="summary-label">' + escHtml(label) + '</div>' +
+    '<div class="summary-value">' + escHtml(String(value)) + '</div>' +
+    '<div class="summary-sub">' + escHtml(sub) + '</div>' +
+  '</div>';
+}
+
+function buildRiskBar(label, count, total, color) {
+  return '<div class="risk-bar">' +
+    '<span class="risk-bar-label">' + escHtml(label) + '</span>' +
+    '<div class="risk-bar-track"><div class="risk-bar-fill" style="width:' + pct(count, total) + ';background:' + color + '"></div></div>' +
+    '<span class="risk-bar-count">' + escHtml(String(count)) + '</span>' +
+  '</div>';
+}
+
+function classifyInsight(text) {
+  const value = String(text || '').toLowerCase();
+  if (value.includes('critical') || value.includes('weak credential') || value.includes('xss') || value.includes('sql')) return 'critical';
+  if (value.includes('warning') || value.includes('missing') || value.includes('admin') || value.includes('exposed')) return 'warning';
+  return 'info';
+}
+
+function insightLabel(type) {
+  if (type === 'critical') return 'Critical';
+  if (type === 'warning') return 'Warning';
+  return 'Info';
+}
+
 function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 function pct(val, total) {
   return total === 0 ? '0%' : Math.round((val / total) * 100) + '%';
 }
 
-function isVuln(val) {
-  if (!val) return false;
-  // Handle object format from scanners (e.g. { target, results: [...] })
-  if (typeof val === 'object' && val.results && Array.isArray(val.results)) {
-    return val.results.some(r => r.type !== 'waf_detected');
+function findingSeverity(item, scanner) {
+  if (!item || typeof item !== 'object') return 'info';
+
+  const type = String(item.type || '').toLowerCase();
+
+  if (type === 'waf_detected' || type === 'csp_detected' || type === 'timeout') {
+    return 'info';
   }
-  const s = String(val).toLowerCase();
-  return s.includes('possible') || s.includes('vulnerable') || s.includes('found');
+
+  if (scanner === 'xss') {
+    if (type === 'reflected_xss' || type === 'possible_stored_xss' || type === 'possible_dom_xss') return 'vuln';
+    if (type === 'encoded_reflection' || type === 'response_difference') return 'info';
+  }
+
+  if (scanner === 'sql') {
+    if (type === 'error_based_sql_injection' || type === 'time_based_sql_injection' || type === 'boolean_based_sql_injection') return 'vuln';
+  }
+
+  return 'info';
+}
+
+function classifyTextSeverity(text) {
+  const lowered = String(text || '').toLowerCase();
+  if (lowered.includes('scan failed') || lowered.includes('timeout')) return 'info';
+  if (lowered.includes('vulnerable') || lowered.includes('injection') || lowered.includes('xss') || lowered.includes('found')) return 'vuln';
+  return 'info';
+}
+
+function isVuln(val, scanner) {
+  if (!val) return false;
+  if (typeof val === 'object' && val.results && Array.isArray(val.results)) {
+    return val.results.some(function(item) {
+      return findingSeverity(item, scanner) === 'vuln';
+    });
+  }
+  return classifyTextSeverity(val) === 'vuln';
 }
 
 function portService(port) {
-  const map = {21:'FTP',22:'SSH',25:'SMTP',53:'DNS',80:'HTTP',110:'POP3',143:'IMAP',443:'HTTPS',3306:'MySQL',8080:'HTTP-Alt'};
+  const map = { 21: 'FTP', 22: 'SSH', 25: 'SMTP', 53: 'DNS', 80: 'HTTP', 110: 'POP3', 143: 'IMAP', 443: 'HTTPS', 3306: 'MYSQL', 8080: 'HTTP-ALT' };
   const name = map[port];
-  return name ? `<span style="color:var(--text-dim);margin-left:6px">(${name})</span>` : '';
+  return name ? ' <span style="color:var(--text-2)">(' + name + ')</span>' : '';
 }
 
 function buildCard(icon, title, items, countClass, renderItem) {
   const list = Array.isArray(items) ? items : [];
   const count = list.length;
   const countCls = count > 0 ? countClass : 'safe';
-  const id = 'card-' + title.replace(/\s/g, '-').toLowerCase() + '-' + Math.random().toString(36).substr(2, 5);
+  const id = 'card-' + title.replace(/\s/g, '-').toLowerCase() + '-' + Math.random().toString(36).slice(2, 7);
 
   let body = '';
   if (count === 0) {
@@ -956,126 +2765,119 @@ function buildCard(icon, title, items, countClass, renderItem) {
     body = list.map(renderItem).join('');
   }
 
-  return `<div class="result-card" id="${id}">
-    <div class="result-card-header" onclick="toggleCard('${id}')">
-      <div class="rch-left">
-        <div class="rch-icon"><span class="${icon}"></span></div>
-        <div class="rch-title">${title}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="rch-count ${countCls}">${count}</span>
-        <span class="rch-chevron">▾</span>
-      </div>
-    </div>
-    <div class="result-card-body"><div class="result-card-content">${body}</div></div>
-  </div>`;
-}
-
-function buildSimpleCard(icon, title, value, type) {
-  const display = value || 'N/A';
-  const cls = type === 'critical' ? 'vuln' : 'safe';
-  const countCls = type === 'critical' ? 'warn' : 'safe';
-  const id = 'card-' + title.replace(/\s/g, '-').toLowerCase() + '-' + Math.random().toString(36).substr(2, 5);
-
-  return `<div class="result-card open" id="${id}">
-    <div class="result-card-header" onclick="toggleCard('${id}')">
-      <div class="rch-left">
-        <div class="rch-icon"><span class="${icon}"></span></div>
-        <div class="rch-title">${title}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="rch-count ${countCls}">${type === 'critical' ? '!' : '✓'}</span>
-        <span class="rch-chevron">▾</span>
-      </div>
-    </div>
-    <div class="result-card-body"><div class="result-card-content">
-      <div class="result-item ${cls}">${escHtml(String(display))}</div>
-    </div></div>
-  </div>`;
+  return '<div class="panel result-card" id="' + id + '">' +
+    '<div class="result-card-header" onclick="toggleCard(\'' + id + '\')">' +
+      '<div class="rch-left">' +
+        '<div class="rch-icon">' + escHtml(icon) + '</div>' +
+        '<div class="rch-title">' + escHtml(title) + '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<span class="rch-count ' + countCls + '">' + count + '</span>' +
+        '<span class="rch-chevron">v</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="result-card-body"><div class="result-card-content">' + body + '</div></div>' +
+  '</div>';
 }
 
 function toggleCard(id) {
-  document.getElementById(id).classList.toggle('open');
+  const card = document.getElementById(id);
+  if (!card) return;
+  card.classList.toggle('open');
 }
 
 function switchTarget(index, el) {
-  document.querySelectorAll('.target-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.target-tab').forEach(function(tab) {
+    tab.classList.remove('active');
+  });
   el.classList.add('active');
-  document.querySelectorAll('.target-results').forEach(t => t.style.display = 'none');
-  document.getElementById('target-' + index).style.display = 'block';
+  document.querySelectorAll('.target-results').forEach(function(result) {
+    result.style.display = 'none';
+  });
+  const panel = document.getElementById('target-' + index);
+  if (panel) panel.style.display = 'block';
   activeTarget = index;
 }
 
 function computeSummary(data) {
-  let critical = 0, high = 0, medium = 0, info = 0;
+  let critical = 0;
+  let high = 0;
+  let medium = 0;
+  let info = 0;
 
-  data.forEach(site => {
-    // Critical: XSS, SQL, Secrets, JWT vulns, weak credentials
-    if (isVuln(site.xss)) critical++;
-    if (isVuln(site.sql)) critical++;
+  data.forEach(function(site) {
+    if (isVuln(site.xss, 'xss')) critical += 1;
+    if (isVuln(site.sql, 'sql')) critical += 1;
     critical += (site.jsSecrets || []).length;
-    critical += (site.jwtAnalysis?.vulnerabilities || []).length;
-    critical += (site.bruteforce?.weakCredentials || []).length;
+    critical += (site.jwtAnalysis && site.jwtAnalysis.vulnerabilities ? site.jwtAnalysis.vulnerabilities.length : 0);
+    critical += (site.bruteforce && site.bruteforce.weakCredentials ? site.bruteforce.weakCredentials.length : 0);
 
-    // High: Missing headers, admin panels, JWT warnings
-    high += (site.headers?.vulnerabilities || []).length;
+    high += (site.headers && site.headers.vulnerabilities ? site.headers.vulnerabilities.length : 0);
     high += (site.adminPanels || []).length;
-    high += (site.jwtAnalysis?.warnings || []).length;
+    high += (site.jwtAnalysis && site.jwtAnalysis.warnings ? site.jwtAnalysis.warnings.length : 0);
 
-    // Medium: Open ports, directories, parameters, login forms
     medium += (site.ports || site.openPorts || []).length;
     medium += (site.directories || []).length;
     medium += (site.parameters || []).length;
-    medium += (site.bruteforce?.loginFormsFound || []).length;
+    medium += (site.bruteforce && site.bruteforce.loginFormsFound ? site.bruteforce.loginFormsFound.length : 0);
 
-    // Info: Pages, endpoints, tech, subdomains, APIs
     info += (site.pages || []).length;
     info += (site.jsEndpoints || []).length;
-    const techs = Array.isArray(site.technologies) ? site.technologies
-      : (site.technologies && Array.isArray(site.technologies.technologies)) ? site.technologies.technologies
-      : [];
+    const techs = Array.isArray(site.technologies)
+      ? site.technologies
+      : (site.technologies && Array.isArray(site.technologies.technologies) ? site.technologies.technologies : []);
     info += techs.length;
     info += (site.subdomains || []).length;
     info += (site.apis || []).length;
   });
 
-  return { critical, high, medium, info, total: critical + high + medium + info };
+  return {
+    critical: critical,
+    high: high,
+    medium: medium,
+    info: info,
+    total: critical + high + medium + info
+  };
 }
 
 function extractOverallRisk(data) {
   const entries = Array.isArray(data) ? data : [];
   if (entries.length === 0) return { score: 0, level: 'LOW' };
 
-  // If multiple targets are scanned, use the highest AI risk score.
   let maxScore = 0;
-
-  for (const site of entries) {
+  entries.forEach(function(site) {
     const ai = Array.isArray(site.aiAnalysis) ? site.aiAnalysis : [];
-    const overall = ai.find(line => typeof line === 'string' && line.startsWith('Overall Risk Level:')) || '';
-    const m = overall.match(/Overall Risk Level:\s*(LOW|MEDIUM|HIGH|CRITICAL)\s*\(Score:\s*(\d+)\/100\)/i);
-    if (m) {
-      const score = Math.max(0, Math.min(100, Number(m[2]) || 0));
+    const overall = ai.find(function(line) {
+      return typeof line === 'string' && line.indexOf('Overall Risk Level:') === 0;
+    }) || '';
+    const match = overall.match(/Overall Risk Level:\s*(LOW|MEDIUM|HIGH|CRITICAL)\s*\(Score:\s*(\d+)\/100\)/i);
+    if (match) {
+      const score = Math.max(0, Math.min(100, Number(match[2]) || 0));
       if (score > maxScore) maxScore = score;
     }
-  }
+  });
 
   let level = 'LOW';
   if (maxScore > 70) level = 'CRITICAL';
   else if (maxScore > 40) level = 'HIGH';
   else if (maxScore > 15) level = 'MEDIUM';
 
-  return { score: maxScore, level };
+  return { score: maxScore, level: level };
 }
 
 function downloadReport() {
-  window.open(`${API_BASE_URL}/download-report`, '_blank');
+  playUiSound('alt');
+  window.open(API_BASE_URL + '/download-report', '_blank');
 }
 
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 4000);
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(function() {
+    toast.classList.remove('show');
+  }, 3200);
 }
 </script>
 </body>
